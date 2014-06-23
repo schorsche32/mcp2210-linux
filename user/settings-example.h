@@ -26,6 +26,22 @@
 
 #include <linux/spi/spidev.h>
 
+/*
+ * The power up settings are just that, the settings the chip will have at 
+ * power up.  These settings are configured into the mcp2210 flash by the 
+ * appropriate command.  These setting (not the flash entry) may be changed by
+ * the driver during initialization using the my_board_config  settings.
+ * The power up and the my_board_config settings may be different.
+ */
+ 
+ /*
+ * Used to configure MMCP2210 CHIP SETTINGS POWER-UP DEFAULT using 
+ * mcp2210-util set config 2
+ *
+ * MCP2210 reference:
+ *    3.1.1 CHIP SETTINGS POWER-UP DEFAULT 
+ */
+
 static const struct mcp2210_chip_settings my_power_up_chip_settings = {
 	.pin_mode = {
 		MCP2210_PIN_SPI,
@@ -45,6 +61,14 @@ static const struct mcp2210_chip_settings my_power_up_chip_settings = {
 	.password = {0, 0, 0, 0, 0, 0, 0, 0},
 };
 
+
+/*
+ * Used to configure SET SPI POWER-UP TRANSFER SETTINGS using 
+ * mcp2210-util set config 8
+ *
+ * MCP2210 reference 
+ *   3.1.2 SET SPI POWER-UP TRANSFER SETTINGS
+ */
 static const struct mcp2210_spi_xfer_settings my_power_up_spi_settings = {
 	.bitrate		= MCP2210_MAX_SPEED,
 	.idle_cs		= 0x01ff,
@@ -56,9 +80,41 @@ static const struct mcp2210_spi_xfer_settings my_power_up_spi_settings = {
 	.mode			= SPI_MODE_3
 };
 
+
+/*
+ * Used to set SET (VM) CURRENT CHIP SETTINGS  using 
+ *   mcp2210-util set config 1  
+ * Also used for creek encode command using 
+ *   mcp2210-util encode
+ *
+ * Usually the same as my_power_up_chip_settings
+ *
+ * MCP2210 reference 
+ *    3.2.4 SET (VM) CURRENT CHIP SETTINGS
+ */
 #define my_chip_settings my_power_up_chip_settings
+
+/*
+ * Used to set SET (VM) SPI TRANSFER SETTINGS using 
+ *   mcp2210-util set config 4
+ * Also used for creek encode command using 
+ *   mcp2210-util encode
+ *
+ * Usually the same as my_power_up_spi_settings
+ *
+ * MCP2210 reference
+ *    3.2.2 SET (VM) SPI TRANSFER SETTINGS
+ */
 #define my_spi_settings  my_power_up_spi_settings
 
+
+/*
+ * Used to set SET USB POWER-UP KEY PARAMETERS using 
+ * mcp2210-util set config 16
+ *
+ * MCP2210 reference:
+ *    3.1.3 SET USB POWER-UP KEY PARAMETERS
+ */
 static const struct mcp2210_usb_key_params my_usb_key_params = {
 	.vid		   = USB_VENDOR_ID_MICROCHIP,
 	.pid		   = USB_DEVICE_ID_MCP2210,
@@ -66,6 +122,15 @@ static const struct mcp2210_usb_key_params my_usb_key_params = {
 	.requested_power   = 0x32, /* 100mA */
 };
 
+
+/* 
+ * Used to configure the board using using
+ *   mcp2210-util set config 32
+ * Aslo used for creek encode using
+ *   mcp2210-util encode
+ *
+ * see mcp2210-creek for further details.
+ */
 static const struct mcp2210_board_config my_board_config = {
 	.pins = {
 		{
