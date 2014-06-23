@@ -46,13 +46,13 @@ static const struct mcp2210_chip_settings my_power_up_chip_settings = {
 	.pin_mode = {
 		MCP2210_PIN_SPI,
 		MCP2210_PIN_GPIO,
-		MCP2210_PIN_DEDICATED,
-		MCP2210_PIN_DEDICATED,
-		MCP2210_PIN_DEDICATED,
-		MCP2210_PIN_DEDICATED,
-		MCP2210_PIN_DEDICATED,
-		MCP2210_PIN_SPI,
-		MCP2210_PIN_GPIO,
+		MCP2210_PIN_DEDICATED,  /* Dedicated = USB Suspend */         
+		MCP2210_PIN_DEDICATED,  /* Dedicated = SPI Transfer LED */    
+		MCP2210_PIN_DEDICATED,  /* Dedicated = USB Low Power */       
+		MCP2210_PIN_DEDICATED,  /* Dedicated = USB Configured */      
+		MCP2210_PIN_DEDICATED,  /* Dedicated = External Interrupt */  
+		MCP2210_PIN_SPI,        /* Dedicated = External Interrupt */  
+		MCP2210_PIN_GPIO,       /* Dedicated = SPI Bus Release REQ */ 
 	},
 	.gpio_value		= 0x0002,
 	.gpio_direction		= 0x0140,
