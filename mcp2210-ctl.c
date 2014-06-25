@@ -139,10 +139,8 @@ chip_config:
 static inline void flip_ep_buffer(struct mcp2210_endpoint *ep, unsigned to_mcp)
 {
 	to_mcp = !!to_mcp;
-	printk(KERN_INFO "flip_ep_buffer: to_mcp = %u, ep->is_mcp_endianness = %hhu", to_mcp, ep->is_mcp_endianness);
 
 	if (ep->is_mcp_endianness != to_mcp) {
-		printk(KERN_INFO "flipping...\n");
 		flip_msg(ep->buffer);
 		ep->is_mcp_endianness = to_mcp;
 	}
@@ -151,10 +149,8 @@ static inline void flip_ep_buffer(struct mcp2210_endpoint *ep, unsigned to_mcp)
 static inline void flip_ctl_cmd_req(struct mcp2210_cmd_ctl *cmd, unsigned to_mcp)
 {
 	to_mcp = !!to_mcp;
-	printk(KERN_INFO "flip_ctl_cmd_req:to_mcp = %u, cmd->is_mcp_endianness = %hhu", to_mcp, cmd->is_mcp_endianness);
 
 	if (cmd->is_mcp_endianness != to_mcp) {
-		printk(KERN_INFO "flipping...\n");
 		flip_msg(&cmd->req);
 		cmd->is_mcp_endianness = to_mcp;
 	}
