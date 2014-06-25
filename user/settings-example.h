@@ -155,7 +155,7 @@ static const struct mcp2210_board_config my_board_config = {
 			.name = "SSPND"
 		}, {
 			.mode = MCP2210_PIN_DEDICATED,
-			.name = "LED",
+			.name = "USBLED",
 		}, {
 			.mode = MCP2210_PIN_DEDICATED,
 			.name = "LOWPWR",
@@ -188,10 +188,10 @@ static const struct mcp2210_board_config my_board_config = {
 			.name = "unused%d",
 		}
 	},
-	.poll_gpio_usecs	      = 0, //10000 * 1000,
-	.stale_gpio_usecs	      = 0, //10000 * 1000,
-	.poll_intr_usecs	      = 0, //10000 * 1000,
-	.stale_intr_usecs	      = 0, //10000 * 1000,
+	.poll_gpio_usecs	      = 0,
+	.stale_gpio_usecs	      = 0,
+	.poll_intr_usecs	      = 0,
+	.stale_intr_usecs	      = 0,
 	._3wire_capable		      = 0,
 	._3wire_tx_enable_active_high = 0,
 	._3wire_tx_enable_pin	      = 0,
