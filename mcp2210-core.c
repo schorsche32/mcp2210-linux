@@ -1761,7 +1761,7 @@ static void complete_urb(struct urb *urb)
 	struct mcp2210_endpoint *other_ep;
 #endif
 	struct mcp2210_cmd *cmd;
-	unsigned long irqflags;
+	unsigned long irqflags = 0; /* GCC sometimes thinks we use this w/o init */
 	int ret;
 	int lock_held;
 
