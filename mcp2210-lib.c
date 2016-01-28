@@ -197,6 +197,13 @@ int validate_board_config(const struct mcp2210_board_config *src,
 			return -EINVAL;
 		}
 	}
+
+	if (!(src->pins[6].has_irq && src->pins[6].mode == MCP2210_PIN_DEDICATED)
+			&& (src->poll_intr_usecs || src->stale_intr_usecs)) {
+		printk(KERN_ERR "Invalid: poll_intr_usecs and stale_intr_usecs should be "
+				"zero unless pin 6 is set to dedicated with .has_irq=1\n");
+		return -EINVAL;
+	}
 	return 0;
 }
 
