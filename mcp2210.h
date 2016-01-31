@@ -644,7 +644,7 @@ struct mcp2210_state {
 extern int debug_level;
 extern int creek_enabled;
 extern int dump_urbs;
-extern int dump_commands;
+extern int dump_cmds;
 extern uint pending_bytes_wait_threshold;
 
 

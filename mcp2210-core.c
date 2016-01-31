@@ -279,13 +279,13 @@ struct mcp2210_cmd_type mcp2210_cmd_types[MCP2210_CMD_TYPE_MAX];
 int debug_level	  = CONFIG_MCP2210_DEBUG_INITIAL;
 int creek_enabled = IS_ENABLED(CONFIG_MCP2210_CREEK);
 int dump_urbs	  = IS_ENABLED(CONFIG_MCP2210_DEBUG);
-int dump_commands = IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE);
+int dump_cmds	  = IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE);
 uint pending_bytes_wait_threshold = 45;
 
 module_param(debug_level,	int, 0664);
 module_param(creek_enabled,	int, 0664);
 module_param(dump_urbs,		int, 0664);
-module_param(dump_commands,	int, 0664);
+module_param(dump_cmds,		int, 0664);
 module_param(pending_bytes_wait_threshold, uint, 0664);
 
 /******************************************************************************
@@ -1866,7 +1866,7 @@ static void complete_urb(struct urb *urb)
 		cmd->state = MCP2210_STATE_COMPLETE;
 		if (type->complete_urb) {
 			ret = type->complete_urb(cmd);
-			if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE) && dump_commands) {
+			if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE) && dump_cmds) {
 				mcp2210_debug("--------FINAL COMMAND STATE--------");
 				dump_cmd(KERN_DEBUG, 0, "cmd: ", cmd);
 			}
@@ -1978,8 +1978,7 @@ static int submit_urbs(struct mcp2210_cmd *cmd, gfp_t gfp_flags)
 		return ret;
 	}
 
-	if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE))
-		dump_cmd(KERN_DEBUG, 0, "submit_urbs: cmd = ", cmd);
+	dump_cmd(KERN_DEBUG, 0, "submit_urbs: cmd = ", cmd);
 
 	if (unlikely(cmd->state != MCP2210_STATE_NEW))
 		mcp2210_warn("unexpected: cmd->state is %u", cmd->state);

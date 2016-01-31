@@ -323,7 +323,7 @@ static int mcp2210_spi_setup(struct spi_device *spi)
 	mcp2210_info("spi_in_flight: %d, cur_spi_config: %d",
 		     dev->spi_in_flight, dev->s.cur_spi_config);
 
-	if (dump_commands)
+	if (dump_cmds)
 		dump_spi_device(KERN_INFO, 0, "mcp2210_spi_setup: "
 				"spi_device = ", spi);
 
@@ -669,7 +669,7 @@ static void spi_complete_ctl_cmd(struct mcp2210_cmd_spi_msg *cmd)
 	/* always returns zero, so ignoring return value */
 	cc->type->complete_urb(cc);
 
-	if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && dump_commands) {
+	if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && dump_cmds) {
 		mcp2210_debug("----CONTROL COMMAND RESPONSED----");
 
 		cc->state = MCP2210_STATE_COMPLETE;

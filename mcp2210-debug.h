@@ -167,7 +167,7 @@ static inline void dump_cmd(const char *level, unsigned indent,
 			    const char *start,
 			    const struct mcp2210_cmd *cmd_head)
 {
-	if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE) && dump_commands)
+	if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE) && dump_cmds)
 		_dump_cmd(level, indent, start, cmd_head);
 }
 
