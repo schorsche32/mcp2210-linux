@@ -42,9 +42,9 @@ static inline int is_eeprom_range_valid(u8 addr, u16 size)
 {
 	int ret = size && (size + (u16)addr) <= 0x100;
 	if (unlikely(!ret))
-		printk(KERN_ERR "invalid address, size or both. "
-		       "addr=0x%02hhx, size=0x%02x, sum=0x%02x", addr, size,
-		       (size + (unsigned)addr));
+		printk(KERN_ERR "%s: invalid address, size or both. "
+		       "addr=0x%02hhx, size=0x%02x, sum=0x%02x",
+		       __func__, addr, size, (size + (unsigned)addr));
 	return ret;
 }
 

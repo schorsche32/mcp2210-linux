@@ -630,12 +630,12 @@ struct spi_msg *parse_msgs(int argc, char *argv[]) {
 
 
 	if (argc != 1) {
-		fprintf(stderr, "too many arguments");
+		fprintf(stderr, "too many arguments\n");
 		return ERR_PTR(-EINVAL);
 	}
 
 	if (!(**argv)) {
-		fprintf(stderr, "msgs string empty");
+		fprintf(stderr, "msg is an string empty\n");
 		return ERR_PTR(-EINVAL);
 	}
 

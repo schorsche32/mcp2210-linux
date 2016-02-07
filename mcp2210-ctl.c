@@ -245,7 +245,7 @@ static int ctl_complete_urb(struct mcp2210_cmd *cmd_head)
 	case MCP2210_CMD_GET_PIN_DIR:
 	case MCP2210_CMD_GET_PIN_VALUE:
 	case MCP2210_CMD_GET_INTERRUPTS:
-		mcp2210_info("flip ep");
+		//mcp2210_info("flip ep");
 		flip_ep_buffer(&dev->eps[EP_IN], false);
 		break;
 	case MCP2210_CMD_SET_NVRAM:
@@ -253,7 +253,7 @@ static int ctl_complete_urb(struct mcp2210_cmd *cmd_head)
 	case MCP2210_CMD_SET_CHIP_CONFIG:
 	case MCP2210_CMD_SET_PIN_DIR:
 	case MCP2210_CMD_SET_PIN_VALUE:
-		mcp2210_info("flip req");
+		//mcp2210_info("flip req");
 		flip_ctl_cmd_req(cmd, false);
 		break;
 	default:
@@ -376,7 +376,8 @@ static int ctl_submit_prepare(struct mcp2210_cmd *cmd_head)
 	struct mcp2210_device *dev;
 
 	if (!cmd_head || !cmd_head->dev || !type || type != &mcp2210_cmd_type_ctl) {
-		trace_printk("something's fucked: %p, %p, %p, %d", cmd_head, cmd_head->dev, type, type != &mcp2210_cmd_type_ctl);
+		printk(KERN_ERR "%s: bad data! %p, %p, %p, %d", __func__,
+		       cmd_head, cmd_head->dev, type, type != &mcp2210_cmd_type_ctl);
 		return -EINVAL;
 	}
 
@@ -387,12 +388,11 @@ static int ctl_submit_prepare(struct mcp2210_cmd *cmd_head)
 	if (dev->dead)
 		return -ESHUTDOWN;
 
-	mcp2210_info("need MCP endianness...");
 	flip_ctl_cmd_req(cmd, true);
 	memcpy(dev->eps[EP_OUT].buffer, &cmd->req, sizeof(cmd->req));
 	memset(dev->eps[EP_IN].buffer, 0, 64); /* FIXME: eventually remove, not really needed */
 
-	mcp2210_info("cmd->is_mcp_endianness = %hhu", cmd->is_mcp_endianness);
+	mcp2210_debug("cmd->is_mcp_endianness = %hhu", cmd->is_mcp_endianness);
 
 	return 0;
 }
@@ -414,7 +414,7 @@ void ctl_cmd_init(struct mcp2210_device *dev, struct mcp2210_cmd_ctl *cmd,
 	cmd->pin = 0x7f;
 	cmd->is_mcp_endianness = is_mcp_endianness;
 
-	mcp2210_info("pin = %hhu, is_mcp_endianness = %hhu", cmd->pin, cmd->is_mcp_endianness);
+	mcp2210_debug("pin = %hhu, is_mcp_endianness = %hhu", cmd->pin, cmd->is_mcp_endianness);
 
 }
 

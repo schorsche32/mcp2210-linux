@@ -101,7 +101,7 @@ long mcp2210_ioctl(struct file *file, unsigned int request, unsigned long arg)
 
 	result_size = sizeof(struct ioctl_result) + struct_size;
 	if (!(result = kzalloc(result_size, GFP_KERNEL))) {
-		printk("Failled to allocate %u bytes\n", (uint)result_size);
+		mcp2210_err("Failled to allocate %u bytes\n", (uint)result_size);
 		return -ENOMEM;
 	}
 

@@ -315,20 +315,21 @@ static struct usb_driver mcp2210_driver = {
 static int __init mcp2210_init(void)
 {
 	int ret;
-	printk("mcp2210_init\n");
+	printk(KERN_INFO "%s\n", __func__);
 	msg_validate_size();
 
 	ret = usb_register_driver(&mcp2210_driver, THIS_MODULE, "mcp2210");
 	if (ret)
-		printk(KERN_ERR "can't register mcp2210 driver\n");
+		printk(KERN_ERR "%s: usb_register_driver() failed with %d\n",
+		       __func__, ret);
 
 	return ret;
 }
 
 static void __exit mcp2210_exit(void)
 {
-    printk("mcp2210_exit\n");
-    usb_deregister(&mcp2210_driver);
+	printk(KERN_INFO "%s\n", __func__);
+	usb_deregister(&mcp2210_driver);
 }
 
 module_init(mcp2210_init);
@@ -704,7 +705,7 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	struct usb_host_endpoint *ep, *ep_end;
 	int ret = -ENODEV;
 
-	printk("mcp2210_probe\n");
+	dev_printk(KERN_NOTICE, &udev->dev, "%s\n", __func__);
 
 	if (!udev)
 		return -ENODEV;
@@ -809,7 +810,8 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 
 	if (IS_ENABLED(CONFIG_MCP2210_CREEK) && creek_enabled) {
 		/* read the first 4 bytes to see if we have our magic number */
-		ret = mcp2210_eeprom_read(dev, NULL, 0, 4, eeprom_read_complete, dev, GFP_KERNEL);
+		ret = mcp2210_eeprom_read(dev, NULL, 0, 4, eeprom_read_complete,
+					  dev, GFP_KERNEL);
 		if (ret && ret != -EINPROGRESS) {
 			mcp2210_err("Adding eeprom command failed with %de", ret);
 			goto error_deregister_dev;
@@ -824,9 +826,6 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 
 	if (ret < 0)
 		goto error_deregister_dev;
-
-
-	mcp2210_info("success");
 
 	return 0;
 
@@ -869,6 +868,7 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 	int ret;
 
 	might_sleep();
+	mcp2210_info();
 
 	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
 		BUG_ON(dev->spi_master);
@@ -939,11 +939,11 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 		usb_autopm_put_interface(dev->intf);
 
 	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
-		mcp2210_info("----------new dump----------\n");
-		dump_dev(KERN_INFO, 0, "", dev);
-	}
+		mcp2210_notice("Device sucessfully configured. New settings:\n");
+		dump_dev(KERN_NOTICE, 0, "", dev);
+	} else
+		mcp2210_notice("Device sucessfully configured\n");
 
-	mcp2210_notice("Configure successful");
 	return 0;
 }
 
@@ -954,7 +954,7 @@ void mcp2210_disconnect(struct usb_interface *intf)
 	int ret;
 	struct mcp2210_device *dev = usb_get_intfdata(intf);
 
-	printk("mcp2210_disconnect\n");
+	mcp2210_notice();
 
 	*((volatile int *)&dev->dead) = -ESHUTDOWN;
 	spin_lock_irqsave(&dev->dev_spinlock, irqflags);
@@ -1021,7 +1021,7 @@ void mcp2210_disconnect(struct usb_interface *intf)
 	usb_set_intfdata(intf, NULL);
 	kref_put(&dev->kref, mcp2210_delete);
 
-	printk("mcp2210_remove\n");
+	printk(KERN_INFO "%s completed\n", __func__);
 }
 
 static inline int u16_get_bit(unsigned bit, u16 raw)

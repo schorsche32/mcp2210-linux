@@ -235,7 +235,7 @@ static void mcp2210_spi_probe_async(struct work_struct *work) {
 		}
 	}
 
-	mcp2210_notice("spi device probe completed");
+	mcp2210_info("spi device probe completed");
 	kfree(async_probe);
 	return;// 0;
 
@@ -251,7 +251,7 @@ error:
 
 void mcp2210_spi_remove(struct mcp2210_device *dev)
 {
-	mcp2210_debug("mcp2210_spi_remove\n");
+	mcp2210_info();
 
 	if (!dev || !dev->spi_master)
 		return;
@@ -371,7 +371,7 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 	uint xfer_chain_size = 0;
 	int ret;
 
-	mcp2210_info("Start new transfer (pin %d)\n", pin);
+	mcp2210_debug("Start new transfer (pin %d)\n", pin);
 
 	/* debug-only sanity checks */
 	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
@@ -591,7 +591,7 @@ static int spi_submit_prepare(struct mcp2210_cmd *cmd_head)
 	pin = cmd->spi->chip_select;
 	req = dev->eps[EP_OUT].buffer;
 
-	mcp2210_info("pin %hhu\n", pin);
+	mcp2210_debug("pin %hhu\n", pin);
 
 	BUG_ON(pin > 8);
 	BUG_ON(dev->config->pins[pin].mode != MCP2210_PIN_SPI);
@@ -648,9 +648,9 @@ buffer_full:
 			 true);
 
 	if (len)
-		mcp2210_info("sending %u bytes", len);
+		mcp2210_debug("sending %u bytes", len);
 	else
-		mcp2210_info("requesting final data");
+		mcp2210_debug("requesting final data");
 
 mcp2210_debug("len: %u, cmd->pending_bytes: %hu\n", len, cmd->pending_bytes);
 	dev->spi_in_flight = 1;
@@ -670,7 +670,7 @@ static void spi_complete_ctl_cmd(struct mcp2210_cmd_spi_msg *cmd)
 	cc->type->complete_urb(cc);
 
 	if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && dump_commands) {
-		mcp2210_info("----CONTROL COMMAND RESPONSED----");
+		mcp2210_debug("----CONTROL COMMAND RESPONSED----");
 
 		cc->state = MCP2210_STATE_COMPLETE;
 		/* get the dump function to print the response */
@@ -702,7 +702,7 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 		BUG_ON(dev->config->pins[pin].mode != MCP2210_PIN_SPI);
 	}
 
-	mcp2210_info();
+	mcp2210_debug();
 
 	if(cmd->ctl_cmd) {
 		spi_complete_ctl_cmd(cmd);
@@ -725,7 +725,7 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 	cmd->pending_bytes -= len;
 	cmd->pending_unacked = 0;
 
-	mcp2210_info("pin %hhu\n", pin);
+	mcp2210_debug("pin %hhu\n", pin);
 	//mcp2210_debug("len: %hhu, cmd->pending_bytes: %hu, URB duration %uus (%lu jiffies)\n", len, cmd->pending_bytes, jiffies_to_usecs(urb_duration), urb_duration);
 	//dump_msg(cmd->head.dev, KERN_DEBUG, "SPI response: ", rep);
 
