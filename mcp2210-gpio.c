@@ -37,14 +37,13 @@
 //static int  request	    (struct gpio_chip *chip, unsigned offset);
 //static void free	    (struct gpio_chip *chip, unsigned offset);
 #ifdef HAVE_GET_DIRECTION
-static int  get_direction   (struct gpio_chip *chip, unsigned offset);
+static int  mcp2210_get_direction   (struct gpio_chip *chip, unsigned offset);
 #endif
-static int  direction_input (struct gpio_chip *chip, unsigned offset);
-static int  get		    (struct gpio_chip *chip, unsigned offset);
-static int  direction_output(struct gpio_chip *chip, unsigned offset, int value);
+static int  mcp2210_direction_input (struct gpio_chip *chip, unsigned offset);
+static int  mcp2210_get		    (struct gpio_chip *chip, unsigned offset);
+static int  mcp2210_direction_output(struct gpio_chip *chip, unsigned offset, int value);
 //static int  set_debounce    (struct gpio_chip *chip, unsigned offset, unsigned debounce);
-static void set		    (struct gpio_chip *chip, unsigned offset, int value);
-//static int  to_irq	    (struct gpio_chip *chip, unsigned offset);
+static void mcp2210_set		    (struct gpio_chip *chip, unsigned offset, int value);
 //static void dbg_show	    (struct seq_file *s, struct gpio_chip *chip);
 
 static inline struct mcp2210_device *chip2dev(struct gpio_chip *chip) {
@@ -78,18 +77,16 @@ int mcp2210_gpio_probe(struct mcp2210_device *dev)
 	gpio->request		= NULL;
 	gpio->free		= NULL;
 #ifdef HAVE_GET_DIRECTION
-	gpio->get_direction	= get_direction;
+	gpio->get_direction	= mcp2210_get_direction;
 #endif
-	gpio->direction_input	= direction_input;
-	gpio->get		= get;
-	gpio->direction_output	= direction_output;
+	gpio->direction_input	= mcp2210_direction_input;
+	gpio->direction_output	= mcp2210_direction_output;
+	gpio->get		= mcp2210_get;
+	gpio->set		= mcp2210_set;
 #ifdef HAVE_SET_DEBOUNCE
 	gpio->set_debounce	= NULL;
 #endif
-	gpio->set		= set;
-#ifdef CONFIG_MCP2210_IRQ
-	gpio->to_irq		= mcp2210_gpio_to_irq;
-#endif
+	gpio->to_irq		= mcp2210_to_irq;
 	gpio->dbg_show		= NULL;
 
 	gpio->base		= -1; /* request dynamic ID allocation */
@@ -215,7 +212,7 @@ static int do_gpio_cmd(struct mcp2210_device *dev, u8 cmd_code, void *body,
 }
 
 #ifdef HAVE_GET_DIRECTION
-static int get_direction(struct gpio_chip *chip, unsigned offset)
+static int mcp2210_get_direction(struct gpio_chip *chip, unsigned offset)
 {
 	struct mcp2210_device *dev = chip2dev(chip);
 	unsigned long irqflags;
@@ -324,17 +321,17 @@ static int set_dir_and_value(struct gpio_chip *chip, unsigned pin, int dir,
 	return ret;
 }
 
-static int direction_input(struct gpio_chip *chip, unsigned offset)
+static int mcp2210_direction_input(struct gpio_chip *chip, unsigned offset)
 {
 	return set_dir_and_value(chip, offset, MCP2210_GPIO_INPUT, 0);
 }
 
-static int direction_output(struct gpio_chip *chip, unsigned offset, int value)
+static int mcp2210_direction_output(struct gpio_chip *chip, unsigned offset, int value)
 {
 	return set_dir_and_value(chip, offset, MCP2210_GPIO_OUTPUT, value);
 }
 
-static int get(struct gpio_chip *chip, unsigned offset)
+static int mcp2210_get(struct gpio_chip *chip, unsigned offset)
 {
 	struct mcp2210_device *dev = chip2dev(chip);
 	unsigned long irqflags;
@@ -393,7 +390,7 @@ static int get(struct gpio_chip *chip, unsigned offset)
 		return 1 & ret >> offset;
 }
 
-static void set(struct gpio_chip *chip, unsigned offset, int value)
+static void mcp2210_set(struct gpio_chip *chip, unsigned offset, int value)
 {
 	set_dir_and_value(chip, offset, MCP2210_GPIO_NO_CHANGE, value);
 }
