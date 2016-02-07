@@ -364,6 +364,9 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 	struct spi_transfer *first_xfer = list_entry(msg->transfers.next,
 						     struct spi_transfer,
 						     transfer_list);
+	struct spi_transfer *last_xfer = list_entry(msg->transfers.prev,
+						     struct spi_transfer,
+						     transfer_list);
 	gfp_t gfp_flags = can_sleep ? GFP_KERNEL : GFP_ATOMIC;
 	uint xfer_chain_size = 0;
 	int ret;
@@ -381,6 +384,11 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 			mcp2210_err("empty transfer list");
 			return -EINVAL;
 		}
+	}
+
+	if (last_xfer->cs_change) {
+		mcp2210_err("Unsupported: cs_change set on last transfer in message.");
+		return -EINVAL;
 	}
 
 	list_for_each(pos, &msg->transfers) {
@@ -401,7 +409,7 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 			return -EINVAL;
 		}
 
-		if (xfer->cs_change)
+		if (xfer->cs_change && xfer != last_xfer)
 			xfer_chain_size = 0;
 
 		/* debug-only sanity checks */
