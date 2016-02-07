@@ -265,6 +265,25 @@ enum mcp2210_gpio_direction {
 	MCP2210_GPIO_INPUT	= 1
 };
 
+/**
+ * enum mcp2210_other_settings
+ *
+ * Represents byte 17 of chip settings message (section 3.1.1, 3.1.2, etc)
+ *
+ * These values are generally ORed together except that only one
+ * MCP2210_INTERRUPT_* value may be chosen (they do not OR together). To disable
+ * any of these options, exclude them (zero is "disabled" for all options).
+ * See table 3-1 in the datasheet for more information.
+ */
+enum mcp2210_other_settings {
+	MCP2210_SPI_BUS_RELEASE_ENABLED = 0x01,
+	MCP2210_INTERRUPT_HIGH_PULSE	= 0x08,
+	MCP2210_INTERRUPT_LOW_PULSE	= 0x06,
+	MCP2210_INTERRUPT_RISING_EDGE	= 0x04,
+	MCP2210_INTERRUPT_FALLING_EDGE	= 0x02,
+	MCP2210_REMOTE_WAKEUP_ENABLED	= 0x80,
+};
+
 enum mcp2210_eeprom_status {
 	MCP2210_EEPROM_UNREAD	    = 0,
 	MCP2210_EEPROM_READ_PENDING = 1,
@@ -1005,7 +1024,6 @@ mcp2210_eeprom_write(struct mcp2210_device *dev, const u8 *src, u8 addr,
 #ifdef CONFIG_MCP2210_IRQ
 int  mcp2210_irq_probe (struct mcp2210_device *dev);
 void mcp2210_irq_remove(struct mcp2210_device *dev);
-int mcp2210_gpio_to_irq(struct gpio_chip *chip, unsigned offset);
 void _mcp2210_irq_do_gpio(struct mcp2210_device *dev, u16 old_val, u16 new_val);
 void _mcp2210_irq_do_intr_counter(struct mcp2210_device *dev, u16 count);
 static inline void mcp2210_irq_do_gpio(struct mcp2210_device *dev,
@@ -1020,6 +1038,18 @@ static inline void mcp2210_irq_do_intr_counter(struct mcp2210_device *dev,
 {
 	if (count)
 		_mcp2210_irq_do_intr_counter(dev, count);
+}
+
+static __maybe_unused int mcp2210_is_pin_irq_producer(struct mcp2210_device *dev, unsigned num)
+{
+	const struct mcp2210_pin_config *pin = &dev->config->pins[num];
+
+	if (!pin->has_irq || pin->mode == MCP2210_PIN_SPI)
+		return 0;
+
+	if (pin->mode == MCP2210_PIN_DEDICATED && num != 6)
+		return 0;
+	return 1;
 }
 #else
 static inline int  mcp2210_irq_probe (struct mcp2210_device *dev) {return 0;}
