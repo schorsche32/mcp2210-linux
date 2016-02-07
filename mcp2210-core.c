@@ -278,8 +278,8 @@ struct mcp2210_cmd_type mcp2210_cmd_types[MCP2210_CMD_TYPE_MAX];
 
 int debug_level	  = CONFIG_MCP2210_DEBUG_INITIAL;
 int creek_enabled = IS_ENABLED(CONFIG_MCP2210_CREEK);
-int dump_urbs	  = IS_ENABLED(CONFIG_MCP2210_DEBUG);
-int dump_cmds	  = IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE);
+int dump_urbs	  = CONFIG_MCP2210_DEBUG_INITIAL >= 7;
+int dump_cmds	  = CONFIG_MCP2210_DEBUG_INITIAL >= 7;
 uint pending_bytes_wait_threshold = 32;
 
 module_param(debug_level,	int, 0664);
