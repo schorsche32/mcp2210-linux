@@ -78,6 +78,21 @@ static inline void flip_interrupt_event_counter(struct mcp2210_msg *msg) {
 /* Keep this a no-inline, monolithic function */
 static __attribute__((flatten)) noinline void flip_msg(struct mcp2210_msg *msg)
 {
+	/* put our most common cases first */
+	switch (msg->cmd) {
+	case MCP2210_CMD_SPI_TRANSFER:
+		return;
+
+	case MCP2210_CMD_GET_PIN_VALUE:
+	case MCP2210_CMD_SET_PIN_VALUE:
+		flip_gpio(msg);
+		return;
+
+	case MCP2210_CMD_GET_INTERRUPTS:
+		flip_interrupt_event_counter(msg);
+		return;
+	};
+
 	switch (msg->cmd) {
 	case MCP2210_CMD_SET_NVRAM:
 	case MCP2210_CMD_GET_NVRAM:
@@ -116,18 +131,11 @@ chip_config:
 
 	case MCP2210_CMD_GET_PIN_DIR:
 	case MCP2210_CMD_SET_PIN_DIR:
-	case MCP2210_CMD_GET_PIN_VALUE:
-	case MCP2210_CMD_SET_PIN_VALUE:
 		flip_gpio(msg);
-		break;
-
-	case MCP2210_CMD_GET_INTERRUPTS:
-		flip_interrupt_event_counter(msg);
 		break;
 
 	case MCP2210_CMD_READ_EEPROM:
 	case MCP2210_CMD_WRITE_EEPROM:
-	case MCP2210_CMD_SPI_TRANSFER:
 	case MCP2210_CMD_SPI_CANCEL:
 	case MCP2210_CMD_SPI_RELEASE:
 	case MCP2210_CMD_SEND_PASSWD:
