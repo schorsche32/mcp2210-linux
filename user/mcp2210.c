@@ -109,7 +109,6 @@ static struct config {
 		u32 speed_hz;
 		u16 delay_usecs;
 		u8 bits_per_word;
-		u8 cs_change;
 	} spi;
 } config = {
 	.verbose = 1,
@@ -128,7 +127,6 @@ static struct config {
 		.speed_hz	= 100 * 1000,
 		.delay_usecs	= 0,
 		.bits_per_word	= 8,
-		.cs_change	= 0,
 	},
 };
 /**
@@ -669,6 +667,11 @@ struct spi_msg *parse_msgs(int argc, char *argv[]) {
 			continue;
 		}
 
+		if (!strncasecmp(p, "cs", 2)) {
+			p += 2;
+			continue;
+		}
+
 		if (sscanf(p, "%02hhx", &val) != 1)
 			goto exit_bad_fmt;
 
@@ -697,6 +700,7 @@ struct spi_msg *parse_msgs(int argc, char *argv[]) {
 	size = 0;
 	next_buf_off = 0;
 	xfer = msg->xfers;
+	xfer->cs_change = 0;
 	while (1) {
 		u8 val;
 
@@ -709,8 +713,8 @@ struct spi_msg *parse_msgs(int argc, char *argv[]) {
 			xfer->speed_hz	    = config.spi.speed_hz;
 			xfer->delay_usecs   = config.spi.delay_usecs;
 			xfer->bits_per_word = config.spi.bits_per_word;
-			xfer->cs_change	    = config.spi.cs_change;
 			++xfer;
+			xfer->cs_change	    = 0;
 
 			if (!*p || !p[1])
 				break;
@@ -721,6 +725,12 @@ struct spi_msg *parse_msgs(int argc, char *argv[]) {
 
 		if (isspace(*p)) {
 			++p;
+			continue;
+		}
+
+		if (!strncasecmp(p, "cs", 2)) {
+			xfer->cs_change = 1;
+			p += 2;
 			continue;
 		}
 
@@ -755,6 +765,11 @@ struct spi_msg *parse_msgs(int argc, char *argv[]) {
 
 		if (isspace(*p)) {
 			++p;
+			continue;
+		}
+
+		if (!strncasecmp(p, "cs", 2)) {
+			p += 2;
 			continue;
 		}
 
@@ -850,7 +865,7 @@ struct spi_msg *get_msg_from_file(void) {
 	msg->xfers->speed_hz	  = config.spi.speed_hz;
 	msg->xfers->delay_usecs	  = config.spi.delay_usecs;
 	msg->xfers->bits_per_word = config.spi.bits_per_word;
-	msg->xfers->cs_change	  = config.spi.cs_change;
+	msg->xfers->cs_change	  = 0;
 
 	return msg;
 
@@ -1045,7 +1060,7 @@ static void show_usage() {
 "SPI Options:\n"
 /* "  -s --spi name[,mode[,speed[,bits_per_word]]]\n" */
 "  -D --spidev     SPI device (default /dev/spidev1.1)\n"
-"  -S --speed      max speed in Hz (default 20kHz)\n"
+"  -s --speed      max speed in Hz (default 20kHz)\n"
 "  -e --delay      delay in uS between messages (default 0)\n"
 "  -b --bpw        bits per word (default 8, !=8 unsupported by mcp2210)\n"
 "  -l --loop       enable loopback (default disabled, unsupported by mcp2210)\n"
