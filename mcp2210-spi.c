@@ -213,12 +213,6 @@ static void mcp2210_spi_probe_async(struct work_struct *work) {
 #endif
 			chip->irq = -1;
 
-		if (cfg->spi.use_cs_gpio)
-			mcp2210_warn("not yet implemented: cs_gpio (err, maybe so actually)");
-
-		if (cfg->has_irq)
-			mcp2210_warn("not yet implemented: IRQs");
-
 		/* unused: chip->controller_state
 		 * unused: chip->controller_data
 		 */
