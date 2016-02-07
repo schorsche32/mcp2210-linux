@@ -16,6 +16,7 @@ modules.order
 *.mod.c
 *.o.cmd
 *.ko.cmd
+*.gcno
 
 # IDE files
 .kdev4

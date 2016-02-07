@@ -34,8 +34,8 @@ modules_install:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
 
 clean:
-	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c mcp2210.s .tmp_versions \
-	       modules.order Module.symvers
+	rm -rf *.o *.gcno *~ core .depend .*.cmd *.ko *.mod.c mcp2210.s \
+	       .tmp_versions  modules.order Module.symvers
 	$(MAKE) -C user clean
 
 mcp2210.s: modules
