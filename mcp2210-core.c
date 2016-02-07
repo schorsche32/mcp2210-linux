@@ -811,6 +811,9 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	/* user key parameters */
 	 || (ret = mcp2210_add_ctl_cmd(dev, MCP2210_CMD_GET_NVRAM,
 				       MCP2210_NVRAM_KEY_PARAMS,
+				       NULL, 0, false, GFP_KERNEL))
+	/* need gpio pin values now so we don't trigger an irq after we probe it */
+	 || (ret = mcp2210_add_ctl_cmd(dev, MCP2210_CMD_GET_PIN_VALUE, 0,
 				       NULL, 0, false, GFP_KERNEL))) {
 		mcp2210_err("Adding some command failed with %de", ret);
 		goto error_deregister_dev;
