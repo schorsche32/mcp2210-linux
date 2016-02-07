@@ -84,6 +84,7 @@ config MCP2210_IRQ
 	bool "Interrupt controller support for MCP2210"
 	depends on MCP2210 && GENERIC_HARDIRQS
 	default n
+	select GPIOLIB_IRQCHIP
 	help
 	  Say yes here to enable the MCP2210 to be used as a psudo-interrupt
 	  controller, generating local interrupts as a response to changes
