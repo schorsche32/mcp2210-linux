@@ -12,12 +12,13 @@ CXX		 = $(CROSS_COMPILE)g++
 LIB		= libmcp2210.so
 LIB_OBJ_FILES	= mcp2210-lib.o mcp2210-user.o
 UTIL_OBJ_FILES	= mcp2210.o tests.o
+SELECT_GPIO_FILES = select-gpio.o
 ALL_OBJ_FILES	= $(LIB_OBJ_FILES) $(UTIL_OBJ_FILES)
 HEADER_FILES	= mcp2210-user.h settings.h ../mcp2210.h ../mcp2210-creek.h \
 		  ../mcp2210-debug.h ../out-of-tree-autoconf.h
 SYMLINK_FILES	= mcp2210-lib.c
 
-all: $(LIB) mcp2210-util
+all: $(LIB) mcp2210-util select-gpio
 
 links: $(SYMLINK_FILES)
 
@@ -37,9 +38,12 @@ settings.h:
 mcp2210-util: links $(UTIL_OBJ_FILES) $(HEADER_FILES) $(LIB)
 	$(CC) $(CFLAGS) $(UTIL_OBJ_FILES) -lmcp2210 -L. -o mcp2210-util
 
+select-gpio: $(SELECT_GPIO_FILES)
+	$(CC) $(CFLAGS) $(SELECT_GPIO_FILES) -o select-gpio
+
 .PHONY : clean
 clean:
-	rm -f $(SYMLINK_FILES) *.o mcp2210 libmcp2210.so
+	rm -f $(SYMLINK_FILES) *.o mcp2210-util select-gpio libmcp2210.so
 
 
 
