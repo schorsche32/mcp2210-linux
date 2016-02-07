@@ -126,6 +126,7 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 #endif /* CONFIG_MCP2210_GPIO */
 
 	if (dev->poll_intr) {
+		/* read and then reset */
 		ctl_cmd_init(dev, &dev->cmd_poll_intr,
 			     MCP2210_CMD_GET_INTERRUPTS, 0, NULL, 0, false);
 		dev->cmd_poll_intr.head.complete = complete_poll;

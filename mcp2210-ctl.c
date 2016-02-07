@@ -356,7 +356,7 @@ static int ctl_complete_urb(struct mcp2210_cmd *cmd_head)
 	case MCP2210_CMD_GET_INTERRUPTS:
 		/* notify interrupt controller */
 		if (dev->is_irq_probed)
-			mcp2210_irq_do_intr_counter(dev, req->body.interrupt_event_counter);
+			mcp2210_irq_do_intr_counter(dev, rep->body.interrupt_event_counter);
 		dev->interrupt_event_counter = req->body.interrupt_event_counter;
 		mcp2210_info("MCP2210_CMD_GET_INTERRUPTS");
 		dev->last_poll_intr = jiffies;
