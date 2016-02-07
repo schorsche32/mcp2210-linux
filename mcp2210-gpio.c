@@ -59,7 +59,7 @@ int mcp2210_gpio_probe(struct mcp2210_device *dev)
 {
 	struct gpio_chip *gpio = &dev->gpio;
 	int ret;
-	int is_gpio_probed = dev->s.is_gpio_probed; /* unalias */
+	int is_gpio_probed = dev->is_gpio_probed; /* unalias */
 
 	mcp2210_info();
 
@@ -111,7 +111,7 @@ int mcp2210_gpio_probe(struct mcp2210_device *dev)
 	mcp2210_info("registered GPIOs from %d to %d", gpio->base,
 		     gpio->base + gpio->ngpio - 1);
 
-	dev->s.is_gpio_probed = 1;
+	dev->is_gpio_probed = 1;
 
 	return 0;
 }
@@ -130,7 +130,7 @@ void mcp2210_gpio_remove(struct mcp2210_device *dev)
 		mcp2210_err("gpiochip_remove() failed with %de", ret);
 		return;
 	}
-	dev->s.is_gpio_probed = 0;
+	dev->is_gpio_probed = 0;
 }
 
 
@@ -354,7 +354,7 @@ static int get(struct gpio_chip *chip, unsigned offset)
 		mode = dev->s.chip_settings.pin_mode[offset];
 		val = 1 & (dev->s.chip_settings.gpio_value >> offset);
 		dir = 1 & (dev->s.chip_settings.gpio_direction >> offset);
-		last_poll = dev->s.last_poll_gpio;
+		last_poll = dev->last_poll_gpio;
 		if (IS_ENABLED(CONFIG_MCP2210_IRQ))
 			stale_usecs = dev->config->stale_gpio_usecs;
 	spin_unlock_irqrestore(&dev->dev_spinlock, irqflags);
@@ -365,8 +365,8 @@ static int get(struct gpio_chip *chip, unsigned offset)
 
 	case MCP2210_PIN_DEDICATED:
 		if (offset == 6) {
-			ret = !!dev->s.interrupt_event_counter;
-			dev->s.interrupt_event_counter = 0;
+			ret = !!dev->interrupt_event_counter;
+			dev->interrupt_event_counter = 0;
 			return ret;
 		}
 		/* fall-throguh */

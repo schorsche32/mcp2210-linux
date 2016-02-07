@@ -356,9 +356,9 @@ static long mcp2210_ioctl_config_get(struct mcp2210_device *dev, struct ioctl_re
 	idcs->have_spi_settings		  = devs->have_spi_settings;
 	idcs->have_power_up_spi_settings  = devs->have_power_up_spi_settings;
 	idcs->have_usb_key_params	  = devs->have_usb_key_params;
-	idcs->have_config		  = !!dev->config;
-	idcs->is_spi_probed		  = !!dev->spi_master;
-	idcs->is_gpio_probed		  = dev->s.is_gpio_probed;
+	dev->have_config		  = !!dev->config;
+	dev->is_spi_probed		  = !!dev->spi_master;
+	dev->is_gpio_probed		  = dev->is_gpio_probed;
 
 	if (devs->have_chip_settings)
 		memcpy(&idcs->chip_settings,
@@ -399,12 +399,12 @@ static long mcp2210_ioctl_config_get(struct mcp2210_device *dev, struct ioctl_re
 	spin_unlock_irqrestore(&dev->dev_spinlock, irqflags);
 
 	if (0) {
-		printk(KERN_DEBUG "is_spi_probed:  %hhu\n", idcs->is_spi_probed);
-		printk(KERN_DEBUG "is_gpio_probed: %hhu\n", idcs->is_gpio_probed);
-		printk(KERN_DEBUG "have_config: %hhu\n", idcs->have_config);
+		printk(KERN_DEBUG "is_spi_probed:  %hhu\n", dev->is_spi_probed);
+		printk(KERN_DEBUG "is_gpio_probed: %hhu\n", dev->is_gpio_probed);
+		printk(KERN_DEBUG "have_config: %hhu\n", dev->have_config);
 		dump_chip_settings(KERN_DEBUG, 0, ".chip_settings = ", &idcs->chip_settings);
 		dump_chip_settings(KERN_DEBUG, 0, ".power_up_chip_settings = ", &idcs->power_up_chip_settings);
-		if (idcs->have_config)
+		if (dev->have_config)
 			dump_board_config(KERN_DEBUG, 0, ".config = ", &idc->config);
 	}
 
@@ -425,12 +425,12 @@ static long mcp2210_ioctl_config_set(struct mcp2210_device *dev, struct ioctl_re
 
 	mcp2210_info();
 
-	if (dev->config && idc->state.have_config) {
+	if (dev->config && idc->have_config) {
 		mcp2210_err("already configured (can only set board_config once)");
 		return -EPERM;
 	}
 
-	if (idc->state.have_config && !(idc->state.have_chip_settings
+	if (idc->have_config && !(idc->state.have_chip_settings
 			|| dev->s.have_chip_settings)) {
 		mcp2210_err("need chip settings");
 		return -EPERM;
@@ -491,7 +491,7 @@ static long mcp2210_ioctl_config_set(struct mcp2210_device *dev, struct ioctl_re
 		list_add_tail(&cmd->head.node, &cmds);
 	}
 
-	if (idc->state.have_config) {
+	if (idc->have_config) {
 		struct mcp2210_cmd *cmd;
 
 		result->new_config = copy_board_config(NULL, &idc->config, GFP_KERNEL);

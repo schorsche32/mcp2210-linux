@@ -883,7 +883,7 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 
 	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
 		BUG_ON(dev->spi_master);
-		BUG_ON(dev->s.is_gpio_probed);
+		BUG_ON(dev->is_gpio_probed);
 		BUG_ON(dev->config);
 		BUG_ON(!dev->s.have_chip_settings);
 	}
@@ -891,16 +891,16 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 		mcp2210_err("ERROR: already have dev->config!");
 	if (dev->spi_master)
 		mcp2210_err("ERROR: already have dev->spi_master!");
-	if (dev->s.is_gpio_probed)
+	if (dev->is_gpio_probed)
 		mcp2210_err("ERROR: gpio already probed");
 	if (!dev->s.have_chip_settings)
 		mcp2210_err("ERROR: don't have dev->s.have_chip_settings!");
 
-	if (dev->config || dev->spi_master || dev->s.is_gpio_probed || !dev->s.have_chip_settings)
+	if (dev->config || dev->spi_master || dev->is_gpio_probed || !dev->s.have_chip_settings)
 		return -EPERM;
 
 	dev->s.cur_spi_config = -1;
-	dev->s.have_config = 1;
+	dev->have_config = 1;
 	dev->config = new_config;
 
 	memcpy(&chip_settings, &dev->s.chip_settings, sizeof(chip_settings));
@@ -1017,7 +1017,7 @@ void mcp2210_disconnect(struct usb_interface *intf)
 #endif
 
 #ifdef CONFIG_MCP2210_GPIO
-	if (dev->s.is_gpio_probed)
+	if (dev->is_gpio_probed)
 		mcp2210_gpio_remove(dev);
 #endif
 

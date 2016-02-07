@@ -359,7 +359,7 @@ int get_config(int argc, char *argv[]) {
 		goto exit_free;
 
 	dump_state("", 0, "state = ", &cfg->state);
-	if (cfg->state.have_config)
+	if (cfg->have_config)
 		dump_board_config("", 0, ".config = ", &cfg->config);
 
 #if 0
@@ -530,13 +530,13 @@ int set_config(int argc, char *argv[]) {
 	}
 
 	if (mask & SETTINGS_BOARD_CONFIG) {
-		cfg->state.have_config = 1;
+		cfg->have_config = 1;
 		cfg->config.strings_size = strings_size;
 		copy_board_config(&cfg->config, &my_board_config, 0);
 	}
 
 	dump_state("", 0, "state = ", &cfg->state);
-	if (cfg->state.have_config)
+	if (cfg->have_config)
 		dump_board_config("", 0, ".config = ", &cfg->config);
 
 	ret = mcp2210_do_ioctl(config.name, MCP2210_IOCTL_CONFIG_SET, data);

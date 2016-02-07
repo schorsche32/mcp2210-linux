@@ -346,7 +346,7 @@ static int ctl_complete_urb(struct mcp2210_cmd *cmd_head)
 				    rep->body.gpio);
 		dev->s.chip_settings.gpio_value = rep->body.gpio;
 		mcp2210_info("MCP2210_CMD_GET_PIN_VALUE");
-		dev->s.last_poll_gpio = dev->eps[EP_IN].submit_time;
+		dev->last_poll_gpio = dev->eps[EP_IN].submit_time;
 		break;
 	case MCP2210_CMD_SET_PIN_VALUE:
 		dev->s.chip_settings.gpio_value = req->body.gpio;
@@ -358,7 +358,7 @@ static int ctl_complete_urb(struct mcp2210_cmd *cmd_head)
 					    req->body.interrupt_event_counter);
 		dev->s.interrupt_event_counter = req->body.interrupt_event_counter;
 		mcp2210_info("MCP2210_CMD_GET_INTERRUPTS");
-		dev->s.last_poll_intr = jiffies;
+		dev->last_poll_intr = jiffies;
 		break;
 
 	default:

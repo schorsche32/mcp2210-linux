@@ -1207,20 +1207,13 @@ void dump_state(const char *level, unsigned indent, const char *start,
 	       "%s.have_power_up_chip_settings = %hhu\n"
 	       "%s.have_spi_settings           = %hhu\n"
 	       "%s.have_power_up_spi_settings  = %hhu\n"
-	       "%s.have_usb_key_params         = %hhu\n"
-	       "%s.have_config                 = %hhu\n"
-	       "%s.is_spi_probed               = %hhu\n"
-	       "%s.is_gpio_probed              = %hhu\n",
+	       "%s.have_usb_key_params         = %hhu\n",
 	       level, get_indent(indent), start, s,
 	       ind, s->have_chip_settings,
 	       ind, s->have_power_up_chip_settings,
 	       ind, s->have_spi_settings,
 	       ind, s->have_power_up_spi_settings,
-	       ind, s->have_usb_key_params,
-	       ind, s->have_config,
-	       ind, s->is_spi_probed,
-	       ind, s->is_gpio_probed);
-
+	       ind, s->have_usb_key_params);
 
 	if (!s->have_chip_settings)
 		printk("%s%s.chip_settings          = (uninitialized)\n",
@@ -1266,17 +1259,11 @@ void dump_state(const char *level, unsigned indent, const char *start,
 	       "%s.idle_cs                     = 0x%04hx\n"
 	       "%s.active_cs                   = 0x%04hx\n"
 	       "%s.spi_delay_per_kb            = %lu\n"
-	       "%s.last_poll_gpio              = %lu\n"
-	       "%s.last_poll_intr              = %lu\n"
-	       "%s.interrupt_event_counter     = 0x%04hx\n"
 	       "%s}\n",
 	       level, ind, s->cur_spi_config,
 	       ind, s->idle_cs,
 	       ind, s->active_cs,
 	       ind, s->spi_delay_per_kb,
-	       ind, s->last_poll_gpio,
-	       ind, s->last_poll_intr,
-	       ind, s->interrupt_event_counter,
 	       ind);
 }
 
@@ -1287,15 +1274,17 @@ void dump_pin_config(const char *level, unsigned indent, const char *start,
 	const char *ind2 = get_indent(indent + 4);
 
 	printk("%s%s%s%p struct mcp2210_pin_config {\n"
-	       "%s.mode     = 0x%02hhx (%s)\n"
-	       "%s.has_irq  = 0x%02hhx\n"
-	       "%s.irq      = 0x%02hhx\n"
-	       "%s.irq_type = 0x%02hhx\n",
+	       "%s.mode         = %hhu (%s)\n"
+	       "%s.has_irq      = %hhu\n"
+	       "%s.irq          = %hhu\n"
+	       "%s.irq_type     = 0x%02hhx\n"
+	       "%s.irq_threaded = %hhx\n",
 	       level, get_indent(indent), start, cfg,
 	       ind, cfg->mode, get_pin_mode_str(cfg->mode),
 	       ind, cfg->has_irq,
 	       ind, cfg->irq,
-	       ind, cfg->irq_type);
+	       ind, cfg->irq_type,
+	       ind, cfg->irq_threaded);
 
 	switch (cfg->mode) {
 	case MCP2210_PIN_DEDICATED:
@@ -1326,8 +1315,8 @@ void dump_pin_config(const char *level, unsigned indent, const char *start,
 		break;
 	};
 
-	printk("%s%s.modalias = %s\n"
-	       "%s.name     = %s\n"
+	printk("%s%s.modalias     = %s\n"
+	       "%s.name         = %s\n"
 	       "%s}\n",
 	       level, ind, cfg->modalias,
 	       ind, cfg->name,
@@ -1407,45 +1396,68 @@ void dump_dev(const char *level, unsigned indent, const char *start,
 	const char *ind = get_indent(indent + 2);
 
 	printk("%s%s%s%p struct mcp2210_device {\n"
-	       "%s.udev            = %p\n"
-	       "%s.intf            = %p\n"
-	       "%s.spi_master      = %p\n"
-//	       "%s.gpio_chip       = %p\n"
-#ifdef CONFIG_MCP2210_SPI
-	       "%s.dev_spinlock    = %slocked\n"
+	       "%s.udev                = %-p\n"
+	       "%s.intf                = %-p\n"
+
+	       "%s.dev_spinlock        = %slocked\n"
+	       "%s.queue_spinlock      = %slocked\n"
+#ifdef CONFIG_MCP2210_IOCTL
+	       "%s.io_mutex            = %slocked\n"
 #endif
-	       "%s.queue_spinlock  = %slocked\n"
+	       "%s.kref\n"
 #ifdef CONFIG_MCP2210_DEBUG
-	       "%s.manager_running = %d\n"
+	       "%s.manager_running     = %d\n"
 #endif
-	       "%s.cmd_queue       = {.next = %p, .prev = %p}\n"
-	       "%s.cur_cmd         = %p\n",
+	       "%s.cmd_queue           = {.next = %-p, .prev = %-p}\n"
+	       "%s.cur_cmd             = %-p\n"
+	       "%s.delayed_list        = {.next = %-p, .prev = %-p}\n"
+	       "%s.delayed_cmd         = %-p\n"
+	       "%s.timer\n",
 	       level, get_indent(indent), start, dev,
 	       ind, dev->udev,
 	       ind, dev->intf,
-#ifdef CONFIG_MCP2210_SPI
-	       ind, dev->spi_master,
-#endif
-//	       ind, dev->gpio_chip,
+
 	       ind, spin_is_locked((struct spinlock*)&dev->dev_spinlock)
 		    ? "" : "un",
 	       ind, spin_is_locked((struct spinlock*)&dev->queue_spinlock)
 		    ? "" : "un",
+#ifdef CONFIG_MCP2210_IOCTL
+	       ind, mutex_is_locked((struct mutex*)&dev->io_mutex)
+		    ? "" : "un",
+#endif
+	       ind,
 #ifdef CONFIG_MCP2210_DEBUG
 	       ind, atomic_read(&dev->manager_running),
 #endif
 	       ind, dev->cmd_queue.next, dev->cmd_queue.prev,
-	       ind, dev->cur_cmd);
+	       ind, dev->cur_cmd,
+	       ind, dev->delayed_list.next, dev->delayed_list.prev,
+	       ind, dev->delayed_cmd,
+	       ind);
 
 	dump_ep(level, indent + 2, ".eps[EP_OUT]     = ", &dev->eps[EP_OUT]);
 	dump_ep(level, indent + 2, ".eps[EP_IN]      = ", &dev->eps[EP_IN]);
 
-	printk("%s%s.dead            = %d\n"
-	       "%s.debug_chatter_count         = %hhu\n"
-	       "%s.spi_in_flight               = %hhu\n",
-	       level, ind, dev->dead,
+	printk("%s%s.delayed_work\n"
+	       "%s.dead                = %d\n"
+	       "%s.debug_chatter_count = %hhu\n"
+	       "%s.spi_in_flight       = %hhu\n"
+	       "%s.have_config         = %hhu\n"
+	       "%s.is_spi_probed       = %hhu\n"
+	       "%s.is_gpio_probed      = %hhu\n"
+	       "%s.is_irq_probed       = %hhu\n"
+	       "%s.poll_intr           = %hhu\n"
+	       "%s.poll_gpio           = %hhu\n",
+	       level, ind,
+	       ind, dev->dead,
 	       ind, dev->debug_chatter_count,
-	       ind, dev->spi_in_flight);
+	       ind, dev->spi_in_flight,
+	       ind, dev->have_config,
+	       ind, dev->is_spi_probed,
+	       ind, dev->is_gpio_probed,
+	       ind, dev->is_irq_probed,
+	       ind, dev->poll_intr,
+	       ind, dev->poll_gpio);
 
 	dump_state(level, indent + 2, ".s = ", &dev->s);
 
@@ -1454,10 +1466,69 @@ void dump_dev(const char *level, unsigned indent, const char *start,
 	else
 		printk("%s%s.config = (null)\n", level, ind);
 
-	printk("%s%sTODO: eeprom here\n"
+	printk("%s%s.ctl_cmd\n"
+#ifdef CONFIG_MCP2210_EEPROM
+	       "%s.eeprom_spinlock     = %slocked\n"
+	       "%s.eeprom_state        = {TODO}\n"
+	       "%s.eeprom_cache        = {TODO}\n"
+#endif
+	       "%s.names\n"
+#ifdef CONFIG_MCP2210_GPIO
+	       "%s.gpio\n"
+#endif
+#ifdef CONFIG_MCP2210_SPI
+	       "%s.spi_master          = %-p\n"
+	       "%s.chips[]             = {TODO}\n"
+#endif
+#ifdef CONFIG_MCP2210_IRQ
+	       "%s.irq_lock            = %slocked\n"
+	       "%s.nr_irqs             = %u\n"
+	       "%s.irq_base            = %d\n"
+	       "%s.irq_revmap[8]\n"
+	       "%s.irq_type[8]\n"
+	       "%s.irq_mask            = %d\n"
+	       "%s.last_poll_gpio      = %ld\n"
+	       "%s.last_poll_intr;     = %ld\n"
+	       "%s.interrupt_event_counter = %d\n"
+# ifdef CONFIG_MCP2210_GPIO
+	       "%s.cmd_poll_gpio\n"
+# endif
+	       "%s.cmd_poll_intr\n"
+#endif
 	       "%s}\n",
-	       level, ind,
-	       get_indent(indent));
+       	       level, get_indent(indent),
+#ifdef CONFIG_MCP2210_EEPROM
+	       ind, spin_is_locked((struct spinlock*)&dev->eeprom_spinlock)
+		    ? "" : "un",
+	       ind,
+	       ind,
+#endif
+	       ind,
+#ifdef CONFIG_MCP2210_GPIO
+	       ind,
+#endif
+#ifdef CONFIG_MCP2210_SPI
+	       ind, dev->spi_master,
+	       ind,
+#endif
+#ifdef CONFIG_MCP2210_IRQ
+	       ind, mutex_is_locked((struct mutex*)&dev->irq_lock)
+		    ? "" : "un",
+	       ind, dev->nr_irqs,
+	       ind, dev->irq_base,
+	       ind, //dev->irq_revmap,
+	       ind, //dev->irq_type,
+	       ind, dev->irq_mask,
+	       ind, dev->last_poll_gpio,
+	       ind, dev->last_poll_intr,
+	       ind, dev->interrupt_event_counter,
+
+# ifdef CONFIG_MCP2210_GPIO
+	       ind,
+# endif
+	       ind,
+#endif /* CONFIG_MCP2210_IRQ */
+	       ind);
 }
 
 void dump_cmd_head(const char *level, unsigned indent, const char *start, const struct mcp2210_cmd *cmd)

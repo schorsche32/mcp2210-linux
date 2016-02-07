@@ -161,12 +161,14 @@ int mcp2210_spi_probe(struct mcp2210_device *dev) {
 	}
 
 	dev->spi_master = master;
-	dev->s.is_spi_probed = 1;
+	dev->is_spi_probed = 1;
 	schedule_work(&async_probe->work);
 
 	return 0;
 }
 
+/* Manage probing SPI protocol drivers, which must be done in a context that
+ * can sleep. */
 static void mcp2210_spi_probe_async(struct work_struct *work) {
 	struct async_spi_probe *async_probe = (void*)work;
 	struct mcp2210_device *dev = async_probe->dev;

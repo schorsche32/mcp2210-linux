@@ -152,7 +152,7 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 
 
 #ifdef CONFIG_MCP2210_GPIO
-	if (dev->s.poll_gpio) {
+	if (dev->poll_gpio) {
 		ctl_cmd_init(dev, &dev->cmd_poll_gpio,
 			     MCP2210_CMD_GET_PIN_VALUE, 0, NULL, 0, false);
 		dev->cmd_poll_gpio.head.complete = complete_poll;
@@ -160,7 +160,7 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 	}
 #endif /* CONFIG_MCP2210_GPIO */
 
-	if (dev->s.poll_intr) {
+	if (dev->poll_intr) {
 		ctl_cmd_init(dev, &dev->cmd_poll_intr,
 			     MCP2210_CMD_GET_INTERRUPTS, 0, NULL, 0, false);
 		dev->cmd_poll_intr.head.complete = complete_poll;
@@ -215,13 +215,13 @@ static int complete_poll(struct mcp2210_cmd *cmd_head, void *context)
 		return -EINPROGRESS;
 
 	if (cmd->req.cmd == MCP2210_CMD_GET_PIN_VALUE) {
-		enabled = dev->s.poll_gpio;
+		enabled = dev->poll_gpio;
 		interval = dev->config->poll_gpio_usecs;
-		dev->s.last_poll_gpio = now;
+		dev->last_poll_gpio = now;
 	} else {
-		enabled = dev->s.poll_intr;
+		enabled = dev->poll_intr;
 		interval = dev->config->poll_intr_usecs;
-		dev->s.last_poll_intr = now;
+		dev->last_poll_intr = now;
 	}
 
 	if (!enabled)
