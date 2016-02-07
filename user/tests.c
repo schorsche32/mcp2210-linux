@@ -143,7 +143,7 @@ int test_encoding(int argc, char *argv[]) {
 		goto exit_free;
 	}
 
-	ret = creek_encode(board_config, &my_chip_settings, buf, sizeof(buf));
+	ret = creek_encode(board_config, &my_chip_settings, buf, sizeof(buf), 1);
 
 	if (ret < 0) {
 		errno = -ret;

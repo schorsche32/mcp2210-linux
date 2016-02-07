@@ -899,6 +899,12 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 	if (dev->config || dev->spi_master || dev->is_gpio_probed || !dev->s.have_chip_settings)
 		return -EPERM;
 
+	ret = validate_board_config(new_config, &dev->s.chip_settings);
+	if (ret) {
+		mcp2210_err("error in board configuration");
+		return ret;
+	}
+
 	dev->s.cur_spi_config = -1;
 	dev->have_config = 1;
 	dev->config = new_config;

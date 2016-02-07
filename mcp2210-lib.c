@@ -124,12 +124,15 @@ struct mcp2210_board_config *copy_board_config(
 	return dest;
 }
 
-
-
 int validate_board_config(const struct mcp2210_board_config *src,
 			  const struct mcp2210_chip_settings *chip)
 {
 	uint i;
+	uint max_irq = 0;
+	uint nr_irqs = 0;
+	u8 irq_has_src[8];
+
+	memset(irq_has_src, 0, sizeof(irq_has_src));
 
 	/* validate settings & write irq data */
 	for (i = 0; i < MCP2210_NUM_PINS; ++i) {
@@ -147,22 +150,74 @@ int validate_board_config(const struct mcp2210_board_config *src,
 			return -EINVAL;
 		}
 
-		if (pin->mode == MCP2210_PIN_DEDICATED && i != 6
-						       && pin->has_irq) {
-			printk(KERN_ERR "Invalid: IRQ on dedicated pin other "
-					"than 6.");
+		if (pin->has_irq) {
+			/* determine the highest irq used */
+			++nr_irqs;
+			if (pin->irq > max_irq)
+				max_irq = pin->irq;
+
+			if (pin->mode == MCP2210_PIN_DEDICATED && i != 6) {
+				printk(KERN_ERR "Invalid: IRQ on dedicated "
+						"pin other than 6.");
+				return -EINVAL;
+			}
+		}
+
+		/* should get compiled-out, but leave it here in case we change
+		 * the storage of the u8 irq:3 field */
+		if (pin->irq >= 7) {
+			printk(KERN_ERR "Invalid: irq > 7.");
 			return -EINVAL;
 		}
 	}
 
+	if (nr_irqs > 8) {
+		printk(KERN_ERR "Invalid: nr_irqs > 8 (unsupported).");
+		return -EINVAL;
+	}
+#if 0
+	/* validate no unused IRQs in allocated range */
+	for (i = 0; i < nr_irqs; ++i) {
+		uint j;
+		for (j = 0; j < MCP2210_NUM_PINS; ++j) {
+			const struct mcp2210_pin_config *pin = &src->pins[j];
+			if (pin->has_irq && pin->irq == i)
+				break;
+		}
+
+		if (j != MCP2210_NUM_PINS) {
+			printk(KERN_ERR "allocated but unused irq %u", i);
+			return -EINVAL;
+		}
+	}
+#endif
 	/* validate IRQ consumers match producers */
 	for (i = 0; i < MCP2210_NUM_PINS; ++i) {
 		const struct mcp2210_pin_config *pin_a = &src->pins[i];
 		const struct mcp2210_pin_config *pin_b;
 		uint j;
 
-		if (pin_a->mode != MCP2210_PIN_SPI || !pin_a->has_irq)
+		if (!pin_a->has_irq)
 			continue;
+
+		/* verify that we don't have multiple pins producing the same
+		 * IRQ */
+		switch (pin_a->mode) {
+		case MCP2210_PIN_DEDICATED:
+			BUG_ON(i != 6);
+			/* intentional fall-through */
+		case MCP2210_PIN_GPIO:
+			if (irq_has_src[pin_a->irq]) {
+				printk(KERN_ERR "multiple pins configured to "
+				       "produce irq %u", pin_a->irq);
+				return -EINVAL;
+			}
+			irq_has_src[pin_a->irq] = 1;
+			continue;
+
+		case MCP2210_PIN_SPI:
+			break;
+		}
 
 		for (j = 0; j < MCP2210_NUM_PINS; ++j) {
 			pin_b = &src->pins[j];
@@ -574,7 +629,7 @@ struct mcp2210_board_config *creek_decode(
 	dec.ver = creek_get_bits(&bs, 4);
 	creek_debug("version", &bs);
 
-	if (dec.ver != 0) {
+	if (dec.ver > 1) {
 		printk(KERN_ERR "Creek version %hhu unsupported", dec.ver);
 		return ERR_PTR(-EPROTO);
 	}
@@ -625,10 +680,15 @@ struct mcp2210_board_config *creek_decode(
 
 		if ((pin->has_irq = creek_get_bits(&bs, 1))) {
 			pin->irq = creek_get_bits(&bs, 3);
+			if (dec.ver >= 1)
+				pin->irq_threaded = creek_get_bits(&bs, 1);
 
 			if (pin->mode == MCP2210_PIN_GPIO) {
 				dec.have_gpio_irqs = 1;
-				pin->irq_type = creek_get_bits(&bs, 3);
+				if (dec.ver == 0)
+					pin->irq_type = creek_get_bits(&bs, 3);
+				else
+					pin->irq_type = creek_get_bits(&bs, 4);
 			}
 		}
 	}
@@ -766,7 +826,7 @@ static void put_encoded_string(struct bit_creek *dest, const char *str)
 
 int creek_encode(const struct mcp2210_board_config *src,
 		 const struct mcp2210_chip_settings *chip, u8* dest,
-		 size_t size)
+		 size_t size, u8 ver)
 {
 	struct creek_data data;
 	struct bit_creek bs;
@@ -776,6 +836,12 @@ int creek_encode(const struct mcp2210_board_config *src,
 	ret = validate_board_config(src, chip);
 	if (ret) {
 		printk(KERN_ERR "Invalid configuration\n");
+		return ret;
+	}
+
+	if (ver > 1) {
+		printk(KERN_ERR "Invalid encoding version: %u. Supported "
+				"versions are 0 and 1.\n", ver);
 		return ret;
 	}
 
@@ -795,7 +861,7 @@ int creek_encode(const struct mcp2210_board_config *src,
 	creek_debug("magic", &bs);
 
 	/* version */
-	creek_put_bits(&bs, 0, 4);
+	creek_put_bits(&bs, ver, 4);
 	creek_debug("version", &bs);
 
 	/* write has_string header */
@@ -838,12 +904,17 @@ int creek_encode(const struct mcp2210_board_config *src,
 		if (pin->has_irq) {
 			/* write the relative IRQ value */
 			creek_put_bits(&bs, pin->irq, 3);
+			if (ver >= 1)
+				creek_put_bits(&bs, pin->irq_threaded, 1);
 
 			/* only gpio have an irq_type, the dedicated line's
 			 * type is configured via the USB interface */
 			if (pin->mode == MCP2210_PIN_GPIO) {
 				data.have_gpio_irqs = 1;
-				creek_put_bits(&bs, pin->irq_type , 3);
+				if (ver == 0)
+					creek_put_bits(&bs, pin->irq_type, 3);
+				else
+					creek_put_bits(&bs, pin->irq_type, 4);
 			}
 		}
 	}

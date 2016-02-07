@@ -69,7 +69,8 @@
  * ----------------------------------------------------------------------
  * has_irq               1         only if spi, gpio or dedicated pin 6
  * irq.num               3         only if has_irq
- * irq.type              3         only if has_irq and gpio
+ * irq.threaded          1         only if has_irq
+ * irq.type              4         only if has_irq and gpio
  *
  *
  * Polling Data
@@ -148,7 +149,7 @@ uint creek_get_bits(struct bit_creek *bs, uint num_bits);
 int creek_put_bits(struct bit_creek *bs, uint value, uint num_bits);
 int creek_encode(const struct mcp2210_board_config *src,
 		 const struct mcp2210_chip_settings *chip, u8* dest,
-		 size_t size);
+		 size_t size, u8 ver);
 struct mcp2210_board_config *creek_decode(
 		const struct mcp2210_chip_settings *chip_settings,
 		const u8* src, size_t size, gfp_t gfp_flags);
