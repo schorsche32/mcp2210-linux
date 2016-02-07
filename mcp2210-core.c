@@ -980,13 +980,12 @@ void mcp2210_disconnect(struct usb_interface *intf)
 	spin_unlock_irqrestore(&dev->dev_spinlock, irqflags);
 
 	/* disable interrupt generation early */
-	mcp2210_irq_remove(dev);
+	mcp2210_irq_disable(dev);
 
 	/* unlink any URBs in route and wait for their completion handlers to be
 	 * called */
 	mcp2210_info("unlinking and killing all URBs...");
 	kill_urbs(dev, NULL);
-
 
 	mcp2210_info("emptying command queue...");
 	spin_lock_irqsave(&dev->queue_spinlock, irqflags);
@@ -1012,22 +1011,11 @@ void mcp2210_disconnect(struct usb_interface *intf)
 
 	/* always let completion handler free dev->cur_cmd */
 
+	/* TODO: any clear SPI transfer queues? */
 
-	/* TODO: interrupt (? taken care of by interrupting URBs?) any SPI
-	 *       transfers & clear the queues */
-	/* TODO: put USB port power back to whatever "normal" is */
-
-#ifdef CONFIG_MCP2210_SPI
-	if (dev->spi_master)
-		mcp2210_spi_remove(dev);
-#endif
-
-#ifdef CONFIG_MCP2210_GPIO
-	if (dev->is_gpio_probed)
-		mcp2210_gpio_remove(dev);
-#endif
-
-	/* TODO: free GPIO resources here */
+	mcp2210_spi_remove(dev);
+	mcp2210_gpio_remove(dev);
+	mcp2210_irq_remove(dev);
 
 #ifdef CONFIG_MCP2210_IOCTL
 	usb_deregister_dev(intf, &mcp2210_class);

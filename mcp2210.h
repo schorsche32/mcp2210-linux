@@ -1023,6 +1023,7 @@ mcp2210_eeprom_write(struct mcp2210_device *dev, const u8 *src, u8 addr,
  */
 #ifdef CONFIG_MCP2210_IRQ
 int  mcp2210_irq_probe (struct mcp2210_device *dev);
+void mcp2210_irq_disable(struct mcp2210_device *dev);
 void mcp2210_irq_remove(struct mcp2210_device *dev);
 void _mcp2210_irq_do_gpio(struct mcp2210_device *dev, u16 old_val, u16 new_val);
 void _mcp2210_irq_do_intr_counter(struct mcp2210_device *dev, u16 count);
@@ -1053,6 +1054,7 @@ static __maybe_unused int mcp2210_is_pin_irq_producer(struct mcp2210_device *dev
 }
 #else
 static inline int  mcp2210_irq_probe (struct mcp2210_device *dev) {return 0;}
+static inline void mcp2210_irq_disable(struct mcp2210_device *dev) {}
 static inline void mcp2210_irq_remove(struct mcp2210_device *dev) {}
 static inline void mcp2210_irq_do_gpio(struct mcp2210_device *dev,
 				       u16 old_val, u16 new_val) {}

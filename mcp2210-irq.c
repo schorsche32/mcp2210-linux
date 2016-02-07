@@ -137,7 +137,7 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 	return 0;
 }
 
-void mcp2210_irq_remove(struct mcp2210_device *dev)
+void mcp2210_irq_disable(struct mcp2210_device *dev)
 {
 	mcp2210_info();
 	if (dev->is_irq_probed) {
@@ -148,6 +148,18 @@ void mcp2210_irq_remove(struct mcp2210_device *dev)
 			irq_set_status_flags(virq, IRQ_NOREQUEST);
 			irq_set_chip_and_handler(virq, NULL, NULL);
 			synchronize_irq(virq);
+		}
+	}
+}
+
+void mcp2210_irq_remove(struct mcp2210_device *dev)
+{
+	mcp2210_info();
+	if (dev->is_irq_probed) {
+		const int virq_end = dev->irq_base + dev->nr_irqs;
+		int virq;
+
+		for (virq = dev->irq_base; virq < virq_end; ++virq) {
 			irq_free_desc(virq);
 			dev->irq_descs[virq] = NULL;
 		}

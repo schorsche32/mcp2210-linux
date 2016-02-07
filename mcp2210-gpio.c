@@ -140,6 +140,9 @@ void mcp2210_gpio_remove(struct mcp2210_device *dev)
 {
 	int ret = 0;
 
+	if (!dev->is_gpio_probed)
+		return;
+
 	mcp2210_info();
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
 	gpiochip_remove(&dev->gpio);

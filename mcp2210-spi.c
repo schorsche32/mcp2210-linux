@@ -253,11 +253,10 @@ error:
 
 void mcp2210_spi_remove(struct mcp2210_device *dev)
 {
-	mcp2210_info();
-
 	if (!dev || !dev->spi_master)
 		return;
 
+	mcp2210_info();
 	spi_unregister_master(dev->spi_master);
 
 	dev->spi_master = NULL;
