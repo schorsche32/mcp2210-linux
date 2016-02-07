@@ -780,9 +780,6 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 		cmd->busy_count = 0;
 		cmd->ctl_cmd = NULL;
 
-#ifndef CONFIG_MCP2210_DONT_SUCK_THE_CPU_DRY
-	}
-#else
 		/* honor delay between xfers here */
 		expected_time_usec = 100ul * cfg->delay_between_xfers;
 
@@ -810,7 +807,6 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 
 	mcp2210_debug("expected_time_usec: %lu (%lu jiffies)\n",
 		      expected_time_usec, usecs_to_jiffies(expected_time_usec));
-#endif /* CONFIG_MCP2210_DONT_SUCK_THE_CPU_DRY */
 
 	if (expected_time_usec) {
 		cmd->head.delay_until = now + usecs_to_jiffies(expected_time_usec);
@@ -835,7 +831,7 @@ static int spi_mcp_error(struct mcp2210_cmd *cmd_head)
 		mcp2210_warn("cmd->busy_count %u\n", cmd->busy_count);
 
 		++cmd->busy_count;
-		if (cmd->busy_count < 64 * (IS_ENABLED(CONFIG_MCP2210_DONT_SUCK_THE_CPU_DRY) ? 1 : 16)) {
+		if (cmd->busy_count < 64) {
 			/* hmm, hopefully shoudn't happen */
 			/* FIXME: tweak this somehow */
 			cmd->head.delay_until = jiffies + usecs_to_jiffies(750);

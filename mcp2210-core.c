@@ -280,7 +280,7 @@ int debug_level	  = CONFIG_MCP2210_DEBUG_INITIAL;
 int creek_enabled = IS_ENABLED(CONFIG_MCP2210_CREEK);
 int dump_urbs	  = IS_ENABLED(CONFIG_MCP2210_DEBUG);
 int dump_cmds	  = IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE);
-uint pending_bytes_wait_threshold = 45;
+uint pending_bytes_wait_threshold = 32;
 
 module_param(debug_level,	int, 0664);
 module_param(creek_enabled,	int, 0664);
