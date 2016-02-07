@@ -50,6 +50,29 @@ static inline struct mcp2210_device *chip2dev(struct gpio_chip *chip) {
 	return container_of(chip, struct mcp2210_device, gpio);
 }
 
+
+#ifdef CONFIG_MCP2210_IRQ
+static int mcp2210_to_irq(struct gpio_chip *chip, unsigned offset)
+{
+	struct mcp2210_device *dev = container_of(chip, struct mcp2210_device, gpio);
+
+	if (offset >= MCP2210_NUM_PINS)
+		return -EINVAL;
+
+	if (!mcp2210_is_pin_irq_producer(dev, offset)) {
+		mcp2210_warn("%s: pin %u not configured as irq producer\n",
+			     __func__, offset);
+		return -ENOSYS;
+	} else {
+		const struct mcp2210_pin_config *pin = &dev->config->pins[offset];
+		return dev->irq_base + pin->irq;
+	}
+}
+#else
+static int (*const mcp2210_to_irq)(struct gpio_chip *chip, unsigned offset) = NULL;
+#endif
+
+
 /******************************************************************************
  * probe & remove
  */
@@ -90,7 +113,7 @@ int mcp2210_gpio_probe(struct mcp2210_device *dev)
 	gpio->dbg_show		= NULL;
 
 	gpio->base		= -1; /* request dynamic ID allocation */
-	gpio->ngpio		= MCP2210_NUM_PINS;
+	gpio->ngpio		= MCP2210_NUM_PINS;	/* FIXME */
 	/* private: gpio->desc */
 	gpio->names		= (void*)dev->names; /* older kernels use char** */
 	gpio->can_sleep		= 1; /* we have to make them sleep because we
