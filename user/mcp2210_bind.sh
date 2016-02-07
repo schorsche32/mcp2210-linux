@@ -37,7 +37,8 @@ if [[ -z "${mcp2210_devices}" ]]; then
 fi
 
 for dev in ${mcp2210_devices}; do
-	echo "${dev}:1.0" > "${sysfs_mount}/bus/usb/drivers/usbhid/unbind"
+	echo "${dev}:1.0" > "${sysfs_mount}/bus/usb/drivers/usbhid/unbind" 2>/dev/null
+	echo "${dev}:1.0" > "${sysfs_mount}/bus/usb/drivers/mcp2210/unbind" 2>/dev/null
 done
 
 # This only needs to be done if the mcp2210 driver has already been probed.

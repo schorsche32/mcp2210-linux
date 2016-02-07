@@ -26,6 +26,20 @@
 
 #include <linux/spi/spidev.h>
 
+#ifndef _LINUX_IRQ_H
+enum {
+	IRQ_TYPE_NONE		= 0x00000000,
+	IRQ_TYPE_EDGE_RISING	= 0x00000001,
+	IRQ_TYPE_EDGE_FALLING	= 0x00000002,
+	IRQ_TYPE_EDGE_BOTH	= (IRQ_TYPE_EDGE_FALLING | IRQ_TYPE_EDGE_RISING),
+	IRQ_TYPE_LEVEL_HIGH	= 0x00000004,
+	IRQ_TYPE_LEVEL_LOW	= 0x00000008,
+	IRQ_TYPE_LEVEL_MASK	= (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH),
+	IRQ_TYPE_SENSE_MASK	= 0x0000000f,
+	IRQ_TYPE_DEFAULT	= IRQ_TYPE_SENSE_MASK,
+};
+#endif
+
 /*
  * The power up settings are just that, the settings the chip will have at
  * power up.  These settings are configured into the mcp2210 flash by the
@@ -56,7 +70,8 @@ static const struct mcp2210_chip_settings my_power_up_chip_settings = {
 	},
 	.gpio_value		= 0x0002,
 	.gpio_direction		= 0x0140,
-	.other_settings		= 0x01,
+	.other_settings		= MCP2210_SPI_BUS_RELEASE_DISABLED
+				| MCP2210_INTERRUPT_LOW_PULSE,
 	.nvram_access_control	= 0,
 	.password = {0, 0, 0, 0, 0, 0, 0, 0},
 };
@@ -164,12 +179,15 @@ static const struct mcp2210_board_config my_board_config = {
 			.name = "USBCFG",
 		}, {
 			.mode = MCP2210_PIN_DEDICATED,
-			.has_irq = 0,
+			.has_irq = 1,
 			.irq = 0,
+			/* .irq_type would be ignored here because you use
+			 * struct my_power_up_chip_settings::other_settings
+			 * for dedicated GP6. */
 			.name = "MOTION",
 		}, {
 			.mode = MCP2210_PIN_SPI,
-			.has_irq = 0,
+			.has_irq = 1,
 			.irq = 0,
 			.spi.max_speed_hz = 20000,
 			.spi.min_speed_hz = 5000,
@@ -181,16 +199,19 @@ static const struct mcp2210_board_config my_board_config = {
 			.spi.last_byte_to_cs_delay = 2,
 			.spi.delay_between_bytes = 4,
 			.spi.delay_between_xfers = 10,
-			.modalias = "spidev",
+			.modalias = "adns9x",
 			.name = "ADNS-9800",
 		}, {
 			.mode = MCP2210_PIN_GPIO,
-			.name = "unused%d",
+			.has_irq = 1,
+			.irq = 1,
+			.irq_type = IRQ_TYPE_EDGE_RISING,
+			.name = "gpio_int%d",
 		}
 	},
-	.poll_gpio_usecs	      = 0,
-	.stale_gpio_usecs	      = 0,
-	.poll_intr_usecs	      = 0,
+	.poll_gpio_usecs	      = 25000,	/* 40 Hz poll rate */
+	.stale_gpio_usecs	      = 2500,
+	.poll_intr_usecs	      = 25000,	/* 40 Hz poll rate */
 	.stale_intr_usecs	      = 0,
 	._3wire_capable		      = 0,
 	._3wire_tx_enable_active_high = 0,
