@@ -288,6 +288,14 @@ module_param(dump_urbs,		int, 0664);
 module_param(dump_cmds,		int, 0664);
 module_param(pending_bytes_wait_threshold, uint, 0664);
 
+MODULE_PARM_DESC(debug_level,	"0-7: Like /proc/sys/kernel/printk, but specific to this driver.");
+MODULE_PARM_DESC(creek_enabled,	"0-1: Enables Creek plug-n-pray (reads wiring and configuration from mcp2210 EEPROM).");
+MODULE_PARM_DESC(dump_urbs,	"0-1: Spew all URBS");
+MODULE_PARM_DESC(dump_cmds,	"0-1: Spew all (internal) commands");
+MODULE_PARM_DESC(pending_bytes_wait_threshold, "1-64: Threshold of buffer "
+		 "population before the driver will delay transfer commands. "
+		 "See README for full details.");
+
 /******************************************************************************
  * USB Driver structs
  */
