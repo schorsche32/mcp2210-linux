@@ -104,7 +104,7 @@
  * delay_between_bytes   uint_opt  always    0                 7          2
  * delay_between_xfers   uint_opt  always    0                 7          2
  *
- * Strings are encoded as 7 bit ASCII with bit 7 terminatng the string.  (We
+ * Strings are encoded as 7 bit ASCII with bit 7 terminating the string.  (We
  * could get better compression by writing string sizes first and then limiting
  * them to 6 bits, but we seem to have plenty of room so far.)
  *

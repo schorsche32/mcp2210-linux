@@ -144,7 +144,6 @@ static int mcp2210_ioctl_complete(struct mcp2210_cmd *cmd_head, void *context)
 
 	mcp2210_info();
 
-
 	/* run configure general-purpose command */
 	if (r->ioctl_cmd == MCP2210_IOCTL_CONFIG_SET && !cmd_head->type) {
 		if (result_has_status) {

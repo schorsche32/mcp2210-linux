@@ -59,6 +59,7 @@
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34) && defined(spin_is_locked)
 #  undef spin_is_locked
 # endif
+
 #else
 # include <stdint.h>
 # include <stddef.h>
@@ -227,7 +228,7 @@ enum mcp2210_nvram_subcmd_code {
  * @MCP2210_STATUS_BUSY:	  Either the SPI bus or USB interface is busy.
  * @MCP2210_STATUS_UNKNOWN_CMD:	  You sent an invalid command code.
  * @MCP2210_STATUS_WRITE_FAIL:	  Write to EEPROM failed (uh-oh)
- * @MCP2210_STATUS_NO_ACCESS:	  Either the device is permenantly locked or is
+ * @MCP2210_STATUS_NO_ACCESS:	  Either the device is permanently locked or is
  * 				  password-protected and you haven't supplied
  * 				  the magic word.  If you get this with
  * 				  MCP2210_CMD_SEND_PASSWD it just means that
@@ -255,6 +256,9 @@ enum mcp2210_pin_mode {
 	MCP2210_PIN_DEDICATED	= 2,
 };
 
+/* Sadly, the datasheet contains no documentation for the meaning of this bit
+ * and had to be discovered by trial and error. Zero is out and one is in.
+ */
 enum mcp2210_gpio_direction {
 	MCP2210_GPIO_NO_CHANGE	= -1,
 	MCP2210_GPIO_OUTPUT	= 0,
@@ -326,7 +330,7 @@ enum mcp2210_endpoints {
  *
  * The entire mcp2210_msg should be zeroed prior to populating fields. Prior to
  * submitting endianness of all fields (over one byte in size) should be'
- * converted from CPU to little endian and after recieving, the reverse.
+ * converted from CPU to little endian and after receiving, the reverse.
  *
  * @see http://ww1.microchip.com/downloads/en/DeviceDoc/22288A.pdf
  *
@@ -404,6 +408,22 @@ struct mcp2210_msg {
 		u8 raw[3];
 	} head;
 
+/**
+ * struct mcp2210_msg_body
+ *
+ * See section 3.1.1 of datasheet for full details.
+ *
+ * @pin_mode:		  MCP2210_PIN_GPIO, _SPI or _DEDICATED for each pin.
+ * @gpio_value:		  Bits 0-8 specify the value of GPIO pins (bits are
+ * 			  ignored when a pin is not configured for GPIO).
+ * @gpio_direction:	  Bits 0-8 specify the direction of GPIO pins
+ * @other_settings	  Use enum mcp2210_other_settings values ORed together,
+ * 			  but do not OR together any MCP_INTERRUPT_ values with
+ * 			  each other.
+ * @nvram_access_control: 0 for no protection, 0x40 for password protection,
+ * 			  0x80 to PERMANENTLY lock the chip settings.
+ * @password:		  8 byte password.
+ */
 	union mcp2210_msg_body {
 		struct mcp2210_chip_settings {
 			u8 pin_mode[MCP2210_NUM_PINS];
@@ -419,6 +439,7 @@ struct mcp2210_msg {
 
 /**
  * struct mcp2210_spi_xfer_settings
+ *
  * @bitrate:		   Bits per second.  A valid value is between 1500
  * 			   (0x5dc) and 12,000,000 (0xb71b00).
  * @idle_cs:		   The idle chip select values for pins 0-8:
@@ -435,7 +456,7 @@ struct mcp2210_msg {
  *
  * When representing the values for SPI communications (either sending or
  * receiving the SPI transfer settings), the idle_cs and active_cs are as
- * advertised -- what the values of each pin should be when innactive and
+ * advertised -- what the values of each pin should be when inactive and
  * active.
  */
 		struct mcp2210_spi_xfer_settings {
@@ -492,15 +513,18 @@ struct mcp2210_msg {
  * mcp2210_pin_config - Configuration for a single multi-purpose pin output
  *
  * @mode:	 How this pin will be used.  Should be one of
- * 		 enum mcp2210_pin_mode
- * @device_pn:	 SPI: The part number of the device connected to this PIN.
- * @device_name: SPI: A more descriptive name of the device
+ * 		 enum mcp2210_pin_mode: MCP2210_PIN_GPIO, _SPI or _DEDICATED.
+ * @has_irq:	 (currently unimplemented)
+ * @irq:	 (currently unimplemented)
+ * @irq_type:	 (currently unimplemented)
+ * @spi:	 SPI settings, if this pin is configured for SPI.
+ * @name:	 SPI: The part number of the device connected to this PIN.
+ * @modalias: 	 SPI: A more descriptive name of the device
  *
  * The MCP2210 has 9 pins that can be used for either General Purpose I/O
  * (GPIO), SPI Chip Select (CS) or some dedicated function specific to the pin.
- * This struct represnts both the hardware configuration of that pin as well as
- * the values for how SPI communications to devices connected to that pin are
- * done.
+ * This struct represents the hardware configuration of that pin as well as
+ * information about how this pin is translated into virtual interrupts.
  */
 struct mcp2210_pin_config {
 	u8 mode:2;
@@ -509,6 +533,8 @@ struct mcp2210_pin_config {
 	u8 irq_type:2;
 
 /**
+ * struct mcp2210_pin_config_spi
+ *
  * @max_speed_hz:	SPI: Max bits per second (must be 1500-12000000)
  * @max_speed_hz:	SPI: Max bits per second (must be 1500-12000000)
  * @mode: 		the struct spi_device mode
@@ -520,9 +546,9 @@ struct mcp2210_pin_config {
  * 			MCP2210) to use for chip select.
  * @cs_to_data_delay	SPI: Chip select to data start delay as a quanta of
  * 			100 us (i.e., in hundreds of microseconds)
- * @last_byte_to_cs_delay SPI: Delay bewteen last byte of data and CS
- * 			de-activation (x 100us)
- * @delay_between_bytes	SPI: Delay bewteen data bytes (x 100us)
+ * @last_byte_to_cs_delay SPI: Delay between last byte of data and CS
+ * 			deactivation (x 100us)
+ * @delay_between_bytes	SPI: Delay between data bytes (x 100us)
  * @delay_between_xfers Delay between transfers (x 100us)
  */
 	struct mcp2210_pin_config_spi {
@@ -561,8 +587,27 @@ struct mcp2210_board_config {
 	char strings[0];
 };
 
-/*
- * @spi_delay_per_kb: usecs / get_timing_quanta()
+/**
+ * struct mcp2210_state - represents the state of the (hardware) device
+ *
+ * @have_chip_settings:		If chip_settings is populated
+ * @have_power_up_chip_settings:If power_up_chip_settings is populated
+ * @have_spi_settings:		If spi_settings is populated
+ * @have_power_up_spi_settings:	If power_up_spi_settings is populated
+ * @have_usb_key_params:	(self explanitory)
+ * @chip_settings:
+ * @power_up_chip_settings:
+ * @spi_settings:
+ * @power_up_spi_settings:
+ * @usb_key_params:
+ * @cur_spi_config:		Index specifying the CS pin of the SPI
+ * 				peripheral the device is currently configured
+ * 				to communicate with or -1 if none.
+ * @idle_cs:			The current idle chip-select value
+ * @active_cs:			The current active chip-select value
+ * @spi_delay_per_kb:		The number of microseconds we would expect the
+ * 				device to transmit a 1kB chunk of data to the
+ * 				current SPI peripheral if it had a 1kB buffer.
  */
 struct mcp2210_state {
 	u8 have_chip_settings:1;
@@ -623,8 +668,8 @@ typedef int (*mcp2210_complete_t)(struct mcp2210_cmd *cmd, void *context);
  * 			purpose (non-USB transaction) command that will execute
  * 			when it complete() is called.
  * @node:		private
- * @time_queued:	Time (in jiffies) comand was queued
- * @time_started:	Time (in jiffies) comand processing began
+ * @time_queued:	Time (in jiffies) command was queued
+ * @time_started:	Time (in jiffies) command processing began
  * @delay_until:	Time (in jiffies) this command should be executed
  * 			(ignored unless delayed is set)
  * @status:		Status code (zero or a negative error)
@@ -674,7 +719,7 @@ struct mcp2210_cmd_ctl {
  * @spi:		The spi_device
  * @msg:		The spi_message
  * @xfer:		The current spi_transfer
- * @pos:		The number of bytes sucessfully xfered to/from the
+ * @pos:		The number of bytes successfully xfered to/from the
  * 			peripheral.
  * @pending_bytes:	The number of bytes sent to the MCP2210 (acked and
  * 			unacked), but not yet transferred to the SPI device.
@@ -684,7 +729,7 @@ struct mcp2210_cmd_ctl {
  * @spi_in_flight:	Set if this command is doing an SPI transfer (not a
  * 			dupliate of from dev->spi_in_flight!)
  * @ctl_cmd:		A pointer to dev->ctl_cmd if we are either changing the
- * 			SPI transfer settings for or cancling a previously
+ * 			SPI transfer settings for or canceling a previously
  * 			failed SPI message.
  */
 struct mcp2210_cmd_spi_msg {
@@ -761,8 +806,8 @@ struct mcp2210_endpoint {
  * @pi_in_flight:	An SPI message is in process (or even hung)
  * @ctl_cmd:		A re-usable control command struct (can be used by cur_cmd only)
 
- * @have_chip_settings:	@chip_settings accurately relfects the state of the device
- * @have_spi_settings:	@spi_settings accurately relfects the state of the device
+ * @have_chip_settings:	@chip_settings accurately reflects the state of the device
+ * @have_spi_settings:	@spi_settings accurately reflects the state of the device
  * @chip_settings:	Current chip settings (native endianness)
  * @spi_settings: 	The current SPI transfer settings with values stored in native endianness
  * @config:		(known) pin configuration data for this device
@@ -976,7 +1021,7 @@ static inline long jiffdiff(unsigned long a, unsigned long b)
 /* mcp2210_init_msg - initialize an MCP2210 message
  *
  * As long as body_size and zero_tail are compile-time constants, this is a
- * more effient mechanism to cleanly init a message than zeroing the whole
+ * more efficient mechanism to cleanly init a message than zeroing the whole
  * thing and then overwriting the values you need.
  */
 static inline void mcp2210_init_msg(struct mcp2210_msg *msg, u8 cmd,

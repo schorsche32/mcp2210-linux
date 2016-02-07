@@ -233,6 +233,7 @@ static int complete_poll(struct mcp2210_cmd *cmd_head, void *context)
 		cmd->head.delayed = 1;
 
 		if (jiffdiff(next, now) < 0) {
+			/* FIXME: spam problem */
 			mcp2210_warn("poll interval collapse, restarting universe");
 			next = jiffies + interval_j;
 		}

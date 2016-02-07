@@ -25,12 +25,11 @@
  * - honor cs_gpio and allow SPI where idle_cs == active_cs
  * - missing mechanism to notify external entities of changes to gpio and
  *   the dedicated "interrupt counter" line.
- * - honor cs_change
  *
  * Fix list:
  * - While we wont see it on x86 & little-endian arm, the flipping
  *   ctl_complete_urb() may be broken when processing data from the request
- *   buffer.
+ *   buffer. -- PROBABLY FIXED
  * - Using the packed version of protocol structs is bloating code horribly,
  *   even worse than I had guessed it would!! So we need to have packed and
  *   unpacked versions of these structs replace the is_mcp_endianness and
@@ -42,15 +41,26 @@
  * - ioctl interface not friendly with ABIs where kernel & user space have
  *   different sized ptrs (x32, sparc64, etc.) (Maybe fix this when we convert
  *   to netlink)
- * - obey struct spi_transfer cs_change
+ * - In struct gpio_chip allocate only the number of gpios for pins that are
+ *   configured for it. This will require a revmap.
+ * - Now that IRQs are working, we have an issue with threaded/non- because gpio
+ *   get() and set() can currently sleep. We probably need to have a specifier
+ *   in the configuration for threaded or not, so that non-threaded IRQs can
+ *   still be used in situtations where it would be more appripriate -- but not
+ *   for SPI transfers, writing gpios (unless we add some type of async
+ *   functionality) or reading gpios (again, unless we add some type of "last
+ *   known value" functionality).
+ * - Improve the way that spi_mcp_error() (and the rest of the SPI code) decides
+ *   how much time to wait.
  *
  * Tweak list:
  * - examine locking and possibly (hopefully) refine
  * - better prediction of how long SPI transfers will take and appropriate
  *   scheduling so that we don't unnecessarily request a status (update: this
- *   has some stuff now, but it may need an audit)
+ *   has some stuff now, but it may need an audit) Update2: it's likely that
+ *   getting too many 0xf8s slows down the device
  * - include/linux/spi/spi.h: extend mode (to u16), spi_device, et. al. to
- *   accommodative missing features (timing, drop cs between words, etc.) (note
+ *   accommodate missing features (timing, drop cs between words, etc.) (note
  *   current work with DUAL and QUAD on linux-spi)
  *   - update spidev driver & userspace to support
  *   - update mcp2210 driver to use them.
@@ -605,7 +615,7 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 	}
 
 	/* We can get 0xfa (write failure) for writing to EEPROM, but we
-	 * supposedly can't get a failure for reading, so we pertty much should
+	 * supposedly can't get a failure for reading, so we pretty much should
 	 * always have a zero for the mcpstatus
 	 */
 	if (cmd->head.mcp_status) {
@@ -850,7 +860,7 @@ static void fail_device(struct mcp2210_device *dev, int error)
 
 
 /**
- * eats new_config
+ * claims new_config (so don't free it)
  */
 int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *new_config)
 {
