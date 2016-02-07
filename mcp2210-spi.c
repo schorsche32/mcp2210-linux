@@ -31,10 +31,10 @@
 /* The non-queued mechanism will supposedly be phased out in the future.
  * However, we don't get any benefit from the new API since we just queue
  * a command (in our own queue) when we get a new message anyway. Thus, when/if
- * the old SPI transfer() mechanism is phased out, we can modify the below
- * KERNEL_VERSION() check.
+ * the old SPI transfer() mechanism is phased out, this version check should be
+ * modified to force use of the new queued mechanism.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(99,4,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(99,99,0)
 # define USE_SPI_QUEUE 1
 #endif
 
