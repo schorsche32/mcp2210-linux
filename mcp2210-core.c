@@ -562,6 +562,10 @@ static int creek_configure(struct mcp2210_cmd *cmd, void *context) {
 	}
 
 	ret = mcp2210_configure(dev, board_config);
+	if (ret) {
+		mcp2210_err("mcp2210_configure failed: %de", ret);
+		kfree(board_config);
+	}
 
 	/*
 	spin_lock_irqsave(&dev->eeprom_spinlock, irqflags);
