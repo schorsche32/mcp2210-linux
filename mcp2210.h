@@ -677,6 +677,7 @@ extern int creek_enabled;
 extern int dump_urbs;
 extern int dump_cmds;
 extern uint pending_bytes_wait_threshold;
+extern uint poll_delay_warn_secs;
 
 
 struct mcp2210_cmd;
@@ -918,6 +919,7 @@ struct mcp2210_device {
 	u8 irq_mask;
 	unsigned long last_poll_gpio;
 	unsigned long last_poll_intr;
+	unsigned long suppress_poll_warn;
 	u16 interrupt_event_counter;
 # ifdef CONFIG_MCP2210_GPIO
 	struct mcp2210_cmd_ctl cmd_poll_gpio;

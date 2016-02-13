@@ -134,6 +134,7 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 	}
 
 	dev->is_irq_probed = 1;
+	dev->suppress_poll_warn = 0;
 
 	return 0;
 }
@@ -214,13 +215,31 @@ void _mcp2210_irq_do_intr_counter(struct mcp2210_device *dev, u16 count)
 	handle_simple_irq(dev->irq_base + pin->irq, desc);
 }
 
+static void warn_poll_past_due(struct mcp2210_device *dev, unsigned long now,
+			       long how_late)
+{
+	mcp2210_warn("Next poll is past due by %ums.\n",
+		     jiffies_to_msecs(how_late));
+
+	if (!poll_delay_warn_secs)
+		return;
+
+	/* If result ends up zero then it'll just repeat once */
+	dev->suppress_poll_warn = now + msecs_to_jiffies(1000
+			          * poll_delay_warn_secs);
+	mcp2210_warn("...suppressing for %u seconds.\n", poll_delay_warn_secs);
+}
+
 static int complete_poll(struct mcp2210_cmd *cmd_head, void *context)
 {
 	struct mcp2210_device *dev = cmd_head->dev;
 	struct mcp2210_cmd_ctl *cmd = (void*)cmd_head;
+	unsigned long now = jiffies;
 	int enabled;
 	unsigned long interval;
-	unsigned long now = jiffies;
+	unsigned long interval_j;
+	unsigned long next;
+	long next_diff;
 
 	mcp2210_debug();
 
@@ -237,26 +256,28 @@ static int complete_poll(struct mcp2210_cmd *cmd_head, void *context)
 		dev->last_poll_intr = now;
 	}
 
+	if (dev->suppress_poll_warn && jiffdiff(dev->suppress_poll_warn, now) <= 0)
+		dev->suppress_poll_warn = 0;
+
 	if (!enabled)
 		return -EINPROGRESS;
 
-	if (1) {
-		unsigned long interval_j = usecs_to_jiffies(interval);
-		unsigned long next = dev->eps[EP_OUT].submit_time + interval_j;
-		cmd->head.delayed = 1;
+	interval_j = usecs_to_jiffies(interval);
+	next = dev->eps[EP_OUT].submit_time + interval_j;
+	next_diff = jiffdiff(next, now);
+	cmd->head.delayed = 1;
 
-		if (jiffdiff(next, now) < 0) {
-			/* FIXME: spam problem */
-			mcp2210_warn("poll interval collapse, restarting universe");
-			next = jiffies + interval_j;
-		}
-		cmd->head.delay_until = next;
+	if (next_diff < 0) {
+		next = now + interval_j;
+		if (!dev->suppress_poll_warn)
+			warn_poll_past_due(dev, now, -next_diff);
+	}
+	cmd->head.delay_until = next;
 
 #if 0
-		mcp2210_debug("interval_j: %lu, submit_time: %lu, next: %lu, jiffies: %lu",
-			      interval_j, dev->eps[EP_OUT].submit_time, next, jiffies);
+	mcp2210_debug("interval_j: %lu, submit_time: %lu, next: %lu, jiffies: %lu",
+		      interval_j, dev->eps[EP_OUT].submit_time, next, jiffies);
 #endif
-	}
 
 	cmd->head.state = MCP2210_STATE_NEW;
 

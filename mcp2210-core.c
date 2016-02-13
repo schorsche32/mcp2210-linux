@@ -281,20 +281,28 @@ int creek_enabled = IS_ENABLED(CONFIG_MCP2210_CREEK);
 int dump_urbs	  = CONFIG_MCP2210_DEBUG_INITIAL >= 7;
 int dump_cmds	  = CONFIG_MCP2210_DEBUG_INITIAL >= 7;
 uint pending_bytes_wait_threshold = 32;
+uint poll_delay_warn_secs = 0;
 
 module_param(debug_level,	int, 0664);
 module_param(creek_enabled,	int, 0664);
 module_param(dump_urbs,		int, 0664);
 module_param(dump_cmds,		int, 0664);
 module_param(pending_bytes_wait_threshold, uint, 0664);
+module_param(poll_delay_warn_secs, uint, 0664);
 
 MODULE_PARM_DESC(debug_level,	"0-7: Like /proc/sys/kernel/printk, but specific to this driver.");
 MODULE_PARM_DESC(creek_enabled,	"0-1: Enables Creek plug-n-pray (reads wiring and configuration from mcp2210 EEPROM).");
 MODULE_PARM_DESC(dump_urbs,	"0-1: Spew all URBS");
 MODULE_PARM_DESC(dump_cmds,	"0-1: Spew all (internal) commands");
-MODULE_PARM_DESC(pending_bytes_wait_threshold, "1-64: Threshold of buffer "
-		 "population before the driver will delay transfer commands. "
-		 "See README for full details.");
+MODULE_PARM_DESC(pending_bytes_wait_threshold,
+		 "1-64: Threshold of buffer population before the driver will "
+		 "delay transfer commands. See README for full details.");
+MODULE_PARM_DESC(poll_delay_warn_secs,
+		 "-1, 0, <n>: Number of seconds to suppress warnings after a "
+		 "poll completes but is already past due, requring "
+		 "rescheduling. Set to zero to always spam (can become "
+		 "perpetuating) and set to -1 to (mostly) suppress the warning "
+		 "all together.");
 
 /******************************************************************************
  * USB Driver structs
