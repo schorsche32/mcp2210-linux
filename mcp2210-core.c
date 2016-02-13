@@ -955,7 +955,7 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 	if (IS_ENABLED(CONFIG_MCP2210_AUTOPM))
 		usb_autopm_put_interface(dev->intf);
 
-	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
+	if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE)) {
 		mcp2210_notice("Device sucessfully configured. New settings:\n");
 		dump_dev(KERN_NOTICE, 0, "", dev);
 	} else
