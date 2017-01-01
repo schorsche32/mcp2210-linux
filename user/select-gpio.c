@@ -1,7 +1,7 @@
 /*
  * A simple program for testing IRQs via userspace gpio sysfs
  *
- * Copyright (c) 2016 Daniel Santos <daniel.santos@pobox.com>
+ * Copyright (c) 2016-2017 Daniel Santos <daniel.santos@pobox.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

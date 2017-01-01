@@ -1,7 +1,7 @@
 /*
  *  MCP2210 driver
  *
- *  Copyright (c) 2013 Daniel Santos <daniel.santos@pobox.com>
+ *  Copyright (c) 2013-2017 Daniel Santos <daniel.santos@pobox.com>
  *                2013 Mathew King <mking@trilithic.com> for Trilithic, Inc
  *
  * This program is free software; you can redistribute it and/or

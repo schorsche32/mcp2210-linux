@@ -2,7 +2,7 @@
  *  MCP2210 driver spi layer
  *
  *  Copyright (c) 2013 Mathew King <mking@trilithic.com> for Trilithic, Inc
- *		  2013 Daniel Santos <daniel.santos@pobox.com>
+ *		  2013-2017 Daniel Santos <daniel.santos@pobox.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
