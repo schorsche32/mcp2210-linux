@@ -122,6 +122,18 @@ config MCP2210_DEBUG_INITIAL
 	  The initial debug level for this driver.  You can change via
 	  /sys/module/mcp2210/parameters/debug_level.
 
+config MCP2210_LOGGING_FAST_PATH
+	bool "Build logging code into fast path"
+	depends on MCP2210
+	help
+	  Saying yes here prevents all logging code paths from being marked as
+	  unlikely, and will result in better optimization of logging at the
+	  cost of slower code when logging is not enabled.  This should ONLY
+	  be used when debugging timing-sensitive problems as it eats icache
+	  unneccessarily otherwise.
+
+	  If unsure, just say no.
+
 config MCP2210_USB_QUIRKS
 	bool "Enable work-arounds for quirky USB host drivers"
 	depends on MCP2210

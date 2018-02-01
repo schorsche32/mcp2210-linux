@@ -34,7 +34,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/* Do not define CONFIG_MCP2210_LOGGING_FAST_PATH unless you're debugging a timing-sensative a
+/* Do not define CONFIG_MCP2210_LOGGING_FAST_PATH unless you're debugging a timing-sensitive a
  * problem and you need log spew to be as optimized as possible. */
 #ifdef CONFIG_MCP2210_LOGGING_FAST_PATH
 # define MCP2210_LOG_UNLIKELY(expr) (expr)
