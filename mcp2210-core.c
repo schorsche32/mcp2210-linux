@@ -239,6 +239,7 @@ out of date info:
 #include <linux/workqueue.h>
 #include <linux/uaccess.h>
 //#include <linux/completion.h>
+#include <linux/compiler.h>
 
 #include "mcp2210.h"
 #include "mcp2210-debug.h"
@@ -262,7 +263,8 @@ static bool reschedule_delayed_work(struct mcp2210_device *dev,
 static inline bool reschedule_delayed_work_ms(struct mcp2210_device *dev,
 					      unsigned int ms);
 static void delayed_work_callback(struct work_struct *work);
-static void timer_callback(unsigned long context);
+static __maybe_unused void timer_callback_4_14(struct timer_list *t);
+static __maybe_unused void timer_callback_pre4_14(unsigned long context);
 
 static int unlink_urbs(struct mcp2210_device *dev);
 static void kill_urbs(struct mcp2210_device *dev, unsigned long *irqflags);
@@ -746,9 +748,15 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	mutex_init(&dev->io_mutex);
 	ctl_cmd_init(dev, &dev->ctl_cmd, 0, 0, NULL, 0, false);
 	INIT_DELAYED_WORK(&dev->delayed_work, delayed_work_callback);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+	timer_setup(&dev->timer, timer_callback_4_14, 0);
+#else
 	init_timer(&dev->timer);
-	dev->timer.function = timer_callback;
+	dev->timer.function = timer_callback_pre_4_14;
 	dev->timer.data = (unsigned long)dev;
+#endif
+
 #ifdef CONFIG_MCP2210_DEBUG
 	atomic_set(&dev->manager_running, 0);
 #endif
@@ -1468,12 +1476,22 @@ __cold noinline static void fail_command(struct mcp2210_device *dev, int error,
 	}
 }
 
-static void timer_callback(unsigned long context)
+static void timer_callback_dev(struct mcp2210_device *dev)
 {
-	struct mcp2210_device *dev = (void*)context;
-
 	mcp2210_debug();
 	process_commands(dev, false, false);
+}
+
+static __maybe_unused void timer_callback_4_14(struct timer_list *t)
+{
+	struct mcp2210_device *dev = from_timer(dev, t, timer);
+	timer_callback_dev(dev);
+}
+
+static __maybe_unused void timer_callback_pre4_14(unsigned long context)
+{
+	struct mcp2210_device *dev = (void*)context;
+	timer_callback_dev(dev);
 }
 
 /* work queue callback to take care of hung URBs and other misc bottom half
