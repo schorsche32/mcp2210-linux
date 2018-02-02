@@ -109,10 +109,11 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 			irq_set_nested_thread(irq, true);
 #endif
 
-#ifdef CONFIG_ARM
-		set_irq_flags(virq, IRQF_VALID);
+#if defined(CONFIG_ARM) && LINUX_VERSION_CODE < KERNEL_VERSION(4,3,0)
+		set_irq_flags(virq, 0);
 #else
 		irq_set_noprobe(virq);
+		irq_modify_status(virq, 0, IRQ_NOREQUEST);
 #endif
 	}
 
