@@ -435,7 +435,8 @@ struct mcp2210_msg {
  * @pin_mode:		  MCP2210_PIN_GPIO, _SPI or _DEDICATED for each pin.
  * @gpio_value:		  Bits 0-8 specify the value of GPIO pins (bits are
  * 			  ignored when a pin is not configured for GPIO).
- * @gpio_direction:	  Bits 0-8 specify the direction of GPIO pins
+ * @gpio_direction:	  Bits 0-8 specify the direction of GPIO pins (0 = out,
+ * 			  1 = in).
  * @other_settings	  Use enum mcp2210_other_settings values ORed together,
  * 			  but do not OR together any MCP_INTERRUPT_ values with
  * 			  each other.
@@ -490,6 +491,15 @@ struct mcp2210_msg {
 			/* u8 reserved[43]; */
 		} spi;
 
+/**
+ * struct mcp2210_usb_key_params
+ *
+ * @vid:		Vendor ID
+ * @pid:		Product ID
+ * @chip_power_option:
+ * @requested_power:	Requested amount of power from USB host in quanta of
+ * 			2mA.
+ */
 		struct mcp2210_usb_key_params {
 			u16 vid;
 			u16 pid;
@@ -609,6 +619,26 @@ struct mcp2210_pin_config {
 	/*const char *desc; */
 };
 
+/**
+ * struct mcp2210_board_config
+ *
+ * @dev_name:
+ * @pins:		Configuration for each pin.
+ * @poll_gpio_usecs:	The interval for polling GPIO state in microseconds or
+ * 			zero if no polling is desired.
+ * @stale_gpio_usecs:	Should be zero if poll_gpio_usecs is zero.  Otherwise,
+ * 			the number of microseconds that a cached GPIO value
+ * 			will be used.  If a call is made to gpio_get_value()
+ * 			when a cached value is older than this, the call will
+ * 			block while the device is queried for an update.
+ * @poll_intr_usecs:	The interval for polling for interrupts from GP6 in its
+ * 			dedicated mode or zero if no polling is desired.
+ * @stale_intr_usecs:	See stale_gpio_usecs
+ * @_3wire_capable:
+ * @_3wire_tx_enable_active_high:
+ * @_3wire_tx_enable_pin:
+ * @strings_size:
+ */
 struct mcp2210_board_config {
 	const char *dev_name;
 	struct mcp2210_pin_config pins[MCP2210_NUM_PINS];
