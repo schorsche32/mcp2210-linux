@@ -122,7 +122,7 @@ static struct config {
 		.size = 0x100,
 	},
 	.spi = {
-		.name		= "/dev/spidev1.1",
+		.name		= "/dev/spidev0.0",
 		.mode		= 3,
 		.speed_hz	= 100 * 1000,
 		.delay_usecs	= 0,
@@ -1059,7 +1059,7 @@ static void show_usage() {
 "\n"
 "SPI Options:\n"
 /* "  -s --spi name[,mode[,speed[,bits_per_word]]]\n" */
-"  -D --spidev     SPI device (default /dev/spidev1.1)\n"
+"  -D --spidev     SPI device (default /dev/spidev0.0)\n"
 "  -s --speed      max speed in Hz (default 20kHz)\n"
 "  -e --delay      delay in uS between messages (default 0)\n"
 "  -b --bpw        bits per word (default 8, !=8 unsupported by mcp2210)\n"
