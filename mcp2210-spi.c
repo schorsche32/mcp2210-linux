@@ -647,7 +647,8 @@ buffer_full:
 	else
 		mcp2210_debug("requesting final data");
 
-mcp2210_debug("len: %u, cmd->pending_bytes: %hu\n", len, cmd->pending_bytes);
+	mcp2210_debug("len: %u, cmd->pending_bytes: %hu\n", len,
+		      cmd->pending_bytes);
 	dev->spi_in_flight = 1;
 	cmd->spi_in_flight = 1;
 	cmd->head.can_retry = 0;
@@ -671,8 +672,8 @@ static void spi_complete_ctl_cmd(struct mcp2210_cmd_spi_msg *cmd)
 		/* get the dump function to print the response */
 		mcp2210_debug("dev->s.cur_spi_config = %d",
 				dev->s.cur_spi_config);
-		dump_spi_xfer_settings(KERN_INFO, 0, "spi settings "
-					"now: ", &dev->s.spi_settings);
+		dump_spi_xfer_settings(KERN_INFO, 0, "spi settings now: ",
+				       &dev->s.spi_settings);
 	}
 
 	cmd->ctl_cmd = NULL;
@@ -747,7 +748,7 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 	if(cmd->pos == cmd->xfer->len) {
 		struct list_head *next = cmd->xfer->transfer_list.next;
 
-		BUG_ON(cmd->pending_bytes != 0); /* temporary sanity check */
+		BUG_ON(cmd->pending_bytes != 0); /* sanity check */
 
 		/* Transfer is done move next */
 		mcp2210_info("%u byte xfer complete (all rx bytes read)",

@@ -110,7 +110,7 @@ config MCP2210_DEBUG_VERBOSE
 	  If you say yes here you enable verbose debug messages (including dump
 	  of structs & messages).  This will increase the data & text by about
 	  (TODO)kb. Unless you are debugging the MCP2210 driver, you probably
-	  don't need this.
+	  don't need or want this.
 
 	  If unsure, say n.
 

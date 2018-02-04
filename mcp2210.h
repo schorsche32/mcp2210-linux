@@ -494,9 +494,14 @@ struct mcp2210_msg {
 /**
  * struct mcp2210_usb_key_params
  *
+ * See section 3.1.3 of datasheet for full details.
+ *
  * @vid:		Vendor ID
  * @pid:		Product ID
- * @chip_power_option:
+ * @chip_power_option:	10xxxxxx Host-powered
+ * 			01xxxxxx Self-powered
+ * 			xx1xxxxx Remote wake-up capable
+ * 			xxx00000 Lower 5 bits should always be zero
  * @requested_power:	Requested amount of power from USB host in quanta of
  * 			2mA.
  */
