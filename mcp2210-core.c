@@ -623,8 +623,13 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 
 	/* deal with fuck-ups */
 	if (cmd->head.status) {
-		mcp2210_err("RPi USB otg drivers are shit, trying "
-			    "a-fucking-gain...");
+		if (dev->eeprom_retry_count == 32) {
+			mcp2210_err("Failed %d EEPROM reads, giving up.",
+				    dev->eeprom_retry_count);
+			return 0;
+		}
+		mcp2210_err("EEPROM read failed, retry %d..",
+			    ++dev->eeprom_retry_count);
 
 		ret = mcp2210_eeprom_read(dev, NULL, 0, cmd->size,
 					  eeprom_read_complete, dev,

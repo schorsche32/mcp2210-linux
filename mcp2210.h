@@ -930,6 +930,7 @@ struct mcp2210_device {
 	struct mcp2210_cmd_ctl ctl_cmd;
 #ifdef CONFIG_MCP2210_EEPROM
 	spinlock_t eeprom_spinlock;
+	int eeprom_retry_count;
 	u8 eeprom_state[64];
 	u8 eeprom_cache[256];
 #endif
