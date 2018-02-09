@@ -711,6 +711,7 @@ extern int debug_level;
 extern int creek_enabled;
 extern int dump_urbs;
 extern int dump_cmds;
+extern int dump_spi;
 extern uint pending_bytes_wait_threshold;
 extern uint poll_delay_warn_secs;
 

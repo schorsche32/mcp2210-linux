@@ -577,6 +577,7 @@ static int spi_submit_prepare(struct mcp2210_cmd *cmd_head)
 	struct mcp2210_cmd_spi_msg *cmd = (void *)cmd_head;
 	struct mcp2210_device *dev;
 	struct mcp2210_msg *req;
+	struct spi_transfer *xfer;
 	unsigned len;
 	const void *start;
 	u8 pin;
@@ -590,7 +591,6 @@ static int spi_submit_prepare(struct mcp2210_cmd *cmd_head)
 
 	BUG_ON(pin > 8);
 	BUG_ON(dev->config->pins[pin].mode != MCP2210_PIN_SPI);
-
 
 	/* If we're in the middle of an SPI transfer, we can't do control
 	 * commands. Thus, we should never have a control command going on at
@@ -610,9 +610,21 @@ static int spi_submit_prepare(struct mcp2210_cmd *cmd_head)
 			return ret;
 	}
 
+	xfer = cmd->xfer;
+	/* Dump SPI TX on very first xfer of message. */
+	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)
+	    && cmd->pos + cmd->pending_bytes == 0 && dump_spi) {
+		char msg_prefix[32];
+		BUG_ON(!xfer->tx_buf);
+		snprintf(msg_prefix, sizeof(msg_prefix), "%s -->: ",
+			 dev_name(&cmd->spi->dev));
+		print_hex_dump(KERN_INFO, msg_prefix, DUMP_PREFIX_OFFSET, 16, 1,
+			       xfer->tx_buf, xfer->len, true);
+	}
+
 	/* Write spi transfer command */
-	if (cmd->pos + cmd->pending_bytes < cmd->xfer->len) {
-		len = cmd->xfer->len - cmd->pos - cmd->pending_bytes;
+	if (cmd->pos + cmd->pending_bytes < xfer->len) {
+		len = xfer->len - cmd->pos - cmd->pending_bytes;
 
 		/* don't try to send more than the buffer will hold */
 		if (len > MCP2210_BUFFER_SIZE - cmd->pending_bytes) {
@@ -628,7 +640,7 @@ static int spi_submit_prepare(struct mcp2210_cmd *cmd_head)
 		 * we can't do 3-wire and have MOSI in high-z with this device,
 		 * so you'll have to use a gpio and external component to
 		 * enable that */
-		start = cmd->xfer->tx_buf ? cmd->xfer->tx_buf + cmd->pos + cmd->pending_bytes
+		start = xfer->tx_buf ? xfer->tx_buf + cmd->pos + cmd->pending_bytes
 					  : NULL;
 
 		cmd->pending_unacked = len;
@@ -686,6 +698,7 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 	struct mcp2210_msg *rep;
 	const struct mcp2210_pin_config_spi *cfg;
 	unsigned long now = jiffies;
+	struct spi_transfer *xfer;
 //	long urb_duration = jiffdiff(now, dev->eps[EP_OUT].submit_time);
 //	int bytes_pending;
 	long expected_time_usec = 0;
@@ -725,19 +738,20 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 	//mcp2210_debug("len: %hhu, cmd->pending_bytes: %hu, URB duration %uus (%lu jiffies)\n", len, cmd->pending_bytes, jiffies_to_usecs(urb_duration), urb_duration);
 	//dump_msg(cmd->head.dev, KERN_DEBUG, "SPI response: ", rep);
 
+	xfer = cmd->xfer;
 	/* See if there is data to receive */
 	if (len) {
 #if 0
 		/* bounds check first */
-		if (unlikely(cmd->pos + len > cmd->xfer->len)) {
+		if (unlikely(cmd->pos + len > xfer->len)) {
 			mcp2210_err("received more data from device than "
 				    "expected.");
 			return -EOVERFLOW;
 		}
 #endif
 
-		if(cmd->xfer->rx_buf)
-			memcpy(cmd->xfer->rx_buf + cmd->pos, rep->body.raw,
+		if(xfer->rx_buf)
+			memcpy(xfer->rx_buf + cmd->pos, rep->body.raw,
 			       len);
 
 		cmd->pos += len;
@@ -745,22 +759,32 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 	}
 
 	/* check if xfer is finished */
-	if(cmd->pos == cmd->xfer->len) {
-		struct list_head *next = cmd->xfer->transfer_list.next;
+	if(cmd->pos == xfer->len) {
+		struct list_head *next = xfer->transfer_list.next;
 
 		BUG_ON(cmd->pending_bytes != 0); /* sanity check */
 
 		/* Transfer is done move next */
 		mcp2210_info("%u byte xfer complete (all rx bytes read)",
-			     cmd->xfer->len);
+			     xfer->len);
+
+		if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && dump_spi) {
+			char msg_prefix[32];
+			BUG_ON(!xfer->rx_buf);
+			snprintf(msg_prefix, sizeof(msg_prefix), "%s <--: ",
+				 dev_name(&cmd->spi->dev));
+			print_hex_dump(KERN_INFO, msg_prefix,
+				       DUMP_PREFIX_OFFSET, 16, 1, xfer->rx_buf,
+				       xfer->len, true);
+		}
 
 		/* if cs_change, then clearing cmd->spi_in_flight will trigger
 		 * a re-check of spi transfer settings in the next call to
 		 * spi_submit_prepare() */
-		if (cmd->xfer->cs_change)
+		if (xfer->cs_change)
 			dev->spi_in_flight = cmd->spi_in_flight = 0;
 
-		if (list_is_last(&cmd->xfer->transfer_list,
+		if (list_is_last(&xfer->transfer_list,
 				 &cmd->msg->transfers)) {
 			mcp2210_info("Command complete");
 			dev->spi_in_flight = cmd->spi_in_flight = 0;
@@ -769,7 +793,7 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 		}
 
 		mcp2210_info("Starting next spi_transfer...");
-		cmd->xfer = list_entry(next, struct spi_transfer,
+		xfer = list_entry(next, struct spi_transfer,
 				       transfer_list);
 		cmd->pos = 0;
 		cmd->pending_bytes = 0;
@@ -789,8 +813,8 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 				   * dev->s.spi_delay_per_kb / 1024ul;
 
 		/* Account for last byte to CS delay if applicable */
-		if (cmd->xfer->cs_change && list_is_last(
-						&cmd->xfer->transfer_list,
+		if (xfer->cs_change && list_is_last(
+						&xfer->transfer_list,
 						&cmd->msg->transfers)) {
 			expected_time_usec += 100ul * cfg->last_byte_to_cs_delay;
  		}
