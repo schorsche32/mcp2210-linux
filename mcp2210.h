@@ -1064,14 +1064,8 @@ mcp2210_eeprom_write(struct mcp2210_device *dev, const u8 *src, u8 addr,
 int  mcp2210_irq_probe (struct mcp2210_device *dev);
 void mcp2210_irq_disable(struct mcp2210_device *dev);
 void mcp2210_irq_remove(struct mcp2210_device *dev);
-void _mcp2210_irq_do_gpio(struct mcp2210_device *dev, u16 old_val, u16 new_val);
+void mcp2210_irq_do_gpio(struct mcp2210_device *dev, u16 old_val, u16 new_val);
 void _mcp2210_irq_do_intr_counter(struct mcp2210_device *dev, u16 count);
-static inline void mcp2210_irq_do_gpio(struct mcp2210_device *dev,
-				       u16 old_val, u16 new_val)
-{
-	if (old_val != new_val)
-		_mcp2210_irq_do_gpio(dev, old_val, new_val);
-}
 
 static inline void mcp2210_irq_do_intr_counter(struct mcp2210_device *dev,
 					       u16 count)

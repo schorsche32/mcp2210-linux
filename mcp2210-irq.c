@@ -103,17 +103,11 @@ int mcp2210_irq_probe(struct mcp2210_device *dev)
 		BUG_ON(!dev->irq_descs[i]);
 		irq_set_chip_data(virq, dev);
 		irq_set_chip(virq, &mcp2210_irq_chip);
-#if 0
-		/* nested not finished */
-		if (pin->irq_threaded)
-			irq_set_nested_thread(irq, true);
-#endif
 
 #if defined(CONFIG_ARM) && LINUX_VERSION_CODE < KERNEL_VERSION(4,3,0)
 		set_irq_flags(virq, 0);
 #else
 		irq_set_noprobe(virq);
-		irq_modify_status(virq, 0, IRQ_NOREQUEST);
 #endif
 	}
 
@@ -174,33 +168,45 @@ void mcp2210_irq_remove(struct mcp2210_device *dev)
  * polling and virtual IRQ trigger functions
  */
 
-void _mcp2210_irq_do_gpio(struct mcp2210_device *dev, u16 old_val, u16 new_val)
+void mcp2210_irq_do_gpio(struct mcp2210_device *dev, u16 old_val, u16 new_val)
 {
-	const int up_mask   = IRQ_TYPE_EDGE_RISING | IRQ_TYPE_LEVEL_HIGH;
-	const int down_mask = IRQ_TYPE_EDGE_FALLING | IRQ_TYPE_LEVEL_LOW;
-
 	uint i;
 	for (i = 0; i < MCP2210_NUM_PINS; ++i) {
 		struct mcp2210_pin_config *pin = &dev->config->pins[i];
-		u8 old_pin_val;
-		u8 new_pin_val;
+		int old_pin_val;
+		int new_pin_val;
+		int edge_mask, level_mask;
+		struct irq_desc *desc;
 
-		if (!pin->has_irq || !pin->mode == MCP2210_PIN_GPIO)
+		if (!pin->has_irq || pin->mode != MCP2210_PIN_GPIO)
 			continue;
 
-		old_pin_val = 1 & (old_val >> i);
-		new_pin_val = 1 & (new_val >> i);
+		old_pin_val = old_val & (1 << i);
+		new_pin_val = new_val & (1 << i);
+		level_mask = new_pin_val ? IRQ_TYPE_LEVEL_HIGH
+					 : IRQ_TYPE_LEVEL_LOW;
+		desc = dev->irq_descs[pin->irq];
 
-		if (old_pin_val == new_pin_val)
-			continue;
+		if (new_pin_val > old_val)
+			edge_mask = IRQ_TYPE_EDGE_RISING;
+		else if (new_pin_val < old_val)
+			edge_mask = IRQ_TYPE_EDGE_FALLING;
+		else
+			edge_mask = 0;
 
-		if (pin->irq_type & (new_pin_val ? up_mask : down_mask)) {
-			struct irq_desc *desc = dev->irq_descs[pin->irq];
+		if (pin->irq_type & edge_mask) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
 			handle_simple_irq(desc);
 #else
-			int virq = dev->irq_base + pin->irq;
-			handle_simple_irq(virq, desc);
+			handle_simple_irq(dev->irq_base + pin->irq, desc);
+#endif
+		}
+
+		if (pin->irq_type & level_mask) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
+			handle_level_irq(desc);
+#else
+			handle_level_irq(dev->irq_base + pin->irq, desc);
 #endif
 		}
 	}
@@ -215,8 +221,8 @@ void _mcp2210_irq_do_intr_counter(struct mcp2210_device *dev, u16 count)
 		return;
 
 	/* We're discarding count and just letting handlers know that at least
-	 * one interrupt occured. Maybe needs a mechanism to let consumers
-	 * know the count? */
+	 * one interrupt occured.  Should this have a mechanism to report the
+	 * interrupt once for each count?  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
 	handle_simple_irq(desc);
 #else
