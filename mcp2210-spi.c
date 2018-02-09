@@ -540,9 +540,13 @@ static int spi_prepare_device(struct mcp2210_cmd_spi_msg *cmd)
 		/* TODO: setup gpio controlling mosi */
 	}
 
-	mcp2210_debug("dev->s.cur_spi_config = %d", dev->s.cur_spi_config);
-	dump_spi_xfer_settings(KERN_DEBUG, 0, "dev->s.spi_settings = ",
-			       &dev->s.spi_settings);
+	if (MCP2210_LOG_UNLIKELY(debug_level >= LOGLEVEL_DEBUG)) {
+		mcp2210_debug("dev->s.cur_spi_config = %d",
+			      dev->s.cur_spi_config);
+		dump_spi_xfer_settings(KERN_DEBUG, 0, "dev->s.spi_settings = ",
+				       &dev->s.spi_settings);
+	}
+
 	calculate_spi_settings(&needed, dev, cmd->spi, cmd->msg, cmd->xfer, pin);
 
 	if (needed.bytes_per_trans == 0) {
@@ -557,10 +561,14 @@ static int spi_prepare_device(struct mcp2210_cmd_spi_msg *cmd)
 		if (!compare_spi_settings(&needed, &dev->s.spi_settings))
 			return 0;
 
-		mcp2210_debug("SPI transfer settings didn't match");
-		dump_spi_xfer_settings(KERN_DEBUG, 0, "needed = ", &needed);
-		dump_spi_xfer_settings(KERN_DEBUG, 0, "dev->spi_settings = ",
-				       &dev->s.spi_settings);
+		if (MCP2210_LOG_UNLIKELY(debug_level >= LOGLEVEL_DEBUG)) {
+			mcp2210_debug("SPI transfer settings didn't match");
+			dump_spi_xfer_settings(KERN_DEBUG, 0,
+					       "needed = ", &needed);
+			dump_spi_xfer_settings(KERN_DEBUG, 0,
+					       "dev->spi_settings = ",
+					       &dev->s.spi_settings);
+		}
 	}
 
 	/* TODO: still missing cmd->spi->mode & (~(SPI_MODE_3 | SPI_CS_HIGH)) */
