@@ -540,7 +540,7 @@ static int spi_prepare_device(struct mcp2210_cmd_spi_msg *cmd)
 		/* TODO: setup gpio controlling mosi */
 	}
 
-	if (MCP2210_LOG_UNLIKELY(debug_level >= LOGLEVEL_DEBUG)) {
+	if (MCP2210_LOG_UNLIKELY(debug_level >= KERN_DEBUG[1] - '0')) {
 		mcp2210_debug("dev->s.cur_spi_config = %d",
 			      dev->s.cur_spi_config);
 		dump_spi_xfer_settings(KERN_DEBUG, 0, "dev->s.spi_settings = ",
@@ -561,7 +561,7 @@ static int spi_prepare_device(struct mcp2210_cmd_spi_msg *cmd)
 		if (!compare_spi_settings(&needed, &dev->s.spi_settings))
 			return 0;
 
-		if (MCP2210_LOG_UNLIKELY(debug_level >= LOGLEVEL_DEBUG)) {
+		if (MCP2210_LOG_UNLIKELY(debug_level >= KERN_DEBUG[1] - '0')) {
 			mcp2210_debug("SPI transfer settings didn't match");
 			dump_spi_xfer_settings(KERN_DEBUG, 0,
 					       "needed = ", &needed);
