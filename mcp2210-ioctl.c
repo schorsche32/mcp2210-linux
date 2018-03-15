@@ -154,7 +154,7 @@ static int mcp2210_ioctl_complete(struct mcp2210_cmd *cmd_head, void *context)
 
 			cmd_head->status = mcp2210_configure(dev, r->new_config);
 			if (cmd_head->status) {
-				mcp2210_err("failed to configure %de", ret);
+				mcp2210_err("failed to configure %d", ret);
 				kfree(r->new_config);
 			}
 		}

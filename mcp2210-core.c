@@ -395,7 +395,7 @@ static int mcp2210_open(struct inode *inode, struct file *file)
 	if (IS_ENABLED(CONFIG_MCP2210_AUTOPM)) {
 		ret = usb_autopm_get_interface(intf);
 		if (ret && ret != -EACCES) {
-			mcp2210_err("usb_autopm_get_interface() failed:%de", ret);
+			mcp2210_err("usb_autopm_get_interface() failed:%d", ret);
 			return ret;
 		}
 	}
@@ -592,13 +592,13 @@ static int creek_configure(struct mcp2210_cmd *cmd, void *context) {
 
 	BUG_ON(dev->config);
 	if (IS_ERR(board_config)) {
-		mcp2210_err("Failed to decode board config from MCP2210's user-EEPROM: %de", (int)PTR_ERR(board_config));
+		mcp2210_err("Failed to decode board config from MCP2210's user-EEPROM: %d", (int)PTR_ERR(board_config));
 		return 0;
 	}
 
 	ret = mcp2210_configure(dev, board_config);
 	if (ret) {
-		mcp2210_err("mcp2210_configure failed: %de", ret);
+		mcp2210_err("mcp2210_configure failed: %d", ret);
 		kfree(board_config);
 	}
 
@@ -639,7 +639,7 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 					  GFP_ATOMIC);
 
 		if (ret && ret != -EINPROGRESS)
-			mcp2210_err("Adding eeprom command failed with %de, fuck it", ret);
+			mcp2210_err("Adding eeprom command failed with %d, fuck it", ret);
 
 		return 0;
 	}
@@ -672,7 +672,7 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 		ret = mcp2210_eeprom_read(dev, NULL, 0, 0x100, eeprom_read_complete, dev, GFP_ATOMIC);
 
 		if (ret && ret != -EINPROGRESS)
-			mcp2210_err("Adding eeprom command failed with %de",
+			mcp2210_err("Adding eeprom command failed with %d",
 				    ret);
 
 		return 0;
@@ -701,7 +701,7 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 #if 0
 
 	if (ret && ret != -EINPROGRESS) {
-		mcp2210_err("Adding eeprom command failed with %de", ret);
+		mcp2210_err("Adding eeprom command failed with %d", ret);
 		goto error2;
 	}
 	CREEK_CONFIG_MAGIC
@@ -808,7 +808,7 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 */
 	ret = usb_register_dev(intf, &mcp2210_class);
 	if (unlikely(ret)) {
-		mcp2210_err("failed to register device %de\n", ret);
+		mcp2210_err("failed to register device %d\n", ret);
 		goto error_autopm_put;
 	}
 #endif /* CONFIG_MCP2210_IOCTL */
@@ -842,7 +842,7 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	/* need gpio pin values now so we don't trigger an irq after we probe it */
 	 || (ret = mcp2210_add_ctl_cmd(dev, MCP2210_CMD_GET_PIN_VALUE, 0,
 				       NULL, 0, false, GFP_KERNEL))) {
-		mcp2210_err("Adding some command failed with %de", ret);
+		mcp2210_err("Adding some command failed with %d", ret);
 		goto error_deregister_dev;
 	}
 
@@ -851,7 +851,7 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		ret = mcp2210_eeprom_read(dev, NULL, 0, 4, eeprom_read_complete,
 					  dev, GFP_KERNEL);
 		if (ret && ret != -EINPROGRESS) {
-			mcp2210_err("Adding eeprom command failed with %de", ret);
+			mcp2210_err("Adding eeprom command failed with %d", ret);
 			goto error_deregister_dev;
 		}
 	}
@@ -886,7 +886,7 @@ error_kref_put:
 #if 0
 static void fail_device(struct mcp2210_device *dev, int error)
 {
-	mcp2210_err("failing mcp2210 with error %de", error);
+	mcp2210_err("failing mcp2210 with error %d", error);
 	*((volatile int *)&dev->dead) = 1;
 	unlink_urbs(dev);
 	cancel_delayed_work(&dev->delayed_work);
@@ -952,7 +952,7 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 		mcp2210_info("----------probing GPIO----------\n");
 		ret = mcp2210_gpio_probe(dev);
 		if (ret) {
-			mcp2210_err("gpio probe failed: %de", ret);
+			mcp2210_err("gpio probe failed: %d", ret);
 			return 0;
 		}
 	}
@@ -961,7 +961,7 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 		mcp2210_info("----------probing IRQ controller----------\n");
 		ret = mcp2210_irq_probe(dev);
 		if (ret) {
-			mcp2210_err("IRQ probe failed: %de", ret);
+			mcp2210_err("IRQ probe failed: %d", ret);
 			return 0;
 		}
 	}
@@ -970,7 +970,7 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 		mcp2210_info("----------probing SPI----------\n");
 		ret = mcp2210_spi_probe(dev);
 		if (ret) {
-			mcp2210_err("spi probe failed: %de", ret);
+			mcp2210_err("spi probe failed: %d", ret);
 			return 0;
 		}
 	}
@@ -1297,7 +1297,7 @@ restart:
 			} else {
 				cmd->state = MCP2210_STATE_DEAD;
 				cmd->status = ret;
-				mcp2210_err("submit_urbs() failed: %de, here are "
+				mcp2210_err("submit_urbs() failed: %d, here are "
 					"the dead URBs\n", ret);
 				mcp2210_dump_urbs(dev, KERN_ERR, 3);
 
@@ -1772,7 +1772,7 @@ complete_urb_bad(struct mcp2210_device *dev, const int is_dir_in)
 	}
 
 	if (status) {
-		mcp2210_warn("%s URB status is %de\n",
+		mcp2210_warn("%s URB status is %d\n",
 			     urb_dir_str[is_dir_in], status);
 
 		switch (status) {
@@ -1840,7 +1840,7 @@ static void complete_urb(struct urb *urb)
 	 * is that usb_unlink_urb can call the completion handlers */
 	lock_held = !atomic_read(&ep->unlink_in_process);
 
-	mcp2210_debug("%s, state: %#02x urb->status: %de, lock_held: %d, kill: %d", urb_dir_str[is_dir_in], ep->state, urb->status, lock_held, ep->kill);
+	mcp2210_debug("%s, state: %#02x urb->status: %d, lock_held: %d, kill: %d", urb_dir_str[is_dir_in], ep->state, urb->status, lock_held, ep->kill);
 
 	if (!lock_held)
 		spin_lock_irqsave(&dev->dev_spinlock, irqflags);
@@ -1989,7 +1989,7 @@ static int submit_urb(struct mcp2210_device *dev, struct mcp2210_endpoint *ep,
 		ep->state = MCP2210_STATE_DEAD;
 		dev->cur_cmd->state = MCP2210_STATE_DEAD;
 
-		mcp2210_err("usb_submit_urb failed for %s URB %de",
+		mcp2210_err("usb_submit_urb failed for %s URB %d",
 			    urb_dir_str[ep->is_dir_in], ret);
 		return ret;
 	}
@@ -2018,7 +2018,7 @@ static int submit_urbs(struct mcp2210_cmd *cmd, gfp_t gfp_flags)
 	ret = cmd->type->submit_prepare(cmd);
 	if (ret) {
 		if (ret != -EALREADY && ret != -EAGAIN)
-			mcp2210_err("submit_prepare failed with %de", ret);
+			mcp2210_err("submit_prepare failed with %d", ret);
 		return ret;
 	}
 

@@ -236,7 +236,7 @@ static void mcp2210_spi_probe_async(struct work_struct *work) {
 	return;// 0;
 
 error:
-	mcp2210_err("SPI device failed to probe: %de\n", ret);
+	mcp2210_err("SPI device failed to probe: %d\n", ret);
 	dev->spi_master = NULL;
 	memset(dev->chips, 0, sizeof(dev->chips));
 	spi_unregister_master(master);

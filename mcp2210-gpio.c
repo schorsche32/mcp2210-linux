@@ -129,7 +129,7 @@ int mcp2210_gpio_probe(struct mcp2210_device *dev)
 
 	ret = gpiochip_add(gpio);
 	if (ret) {
-		mcp2210_err("Failed to register GPIOs: %de", ret);
+		mcp2210_err("Failed to register GPIOs: %d", ret);
 		return ret;
 	}
 
@@ -155,7 +155,7 @@ void mcp2210_gpio_remove(struct mcp2210_device *dev)
 	ret = gpiochip_remove(&dev->gpio);
 #endif
 	if (ret) {
-		mcp2210_err("gpiochip_remove() failed with %de", ret);
+		mcp2210_err("gpiochip_remove() failed with %d", ret);
 		return;
 	}
 	dev->is_gpio_probed = 0;

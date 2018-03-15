@@ -273,7 +273,7 @@ int mcp2210_eeprom_read(struct mcp2210_device *dev, u8 *dest, u8 addr,
 			       complete, context, gfp_flags);
 
 	if (ret) {
-		mcp2210_err("failed to add command to queue, %de\n", ret);
+		mcp2210_err("failed to add command to queue, %d\n", ret);
 		return ret;
 	}
 
