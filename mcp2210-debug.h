@@ -158,7 +158,8 @@ void _mcp2210_dump_urbs(struct mcp2210_device *dev, const char *level,
 static inline void mcp2210_dump_urbs(struct mcp2210_device *dev,
 				     const char *level, int urb_mask)
 {
-	if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && dump_urbs)
+	if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && (dump_urbs
+			|| level[1] <= KERN_WARNING[1]))
 		_mcp2210_dump_urbs(dev, level, urb_mask);
 }
 

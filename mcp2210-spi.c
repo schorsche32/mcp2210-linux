@@ -368,6 +368,9 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 
 	mcp2210_debug("Start new transfer (pin %d)\n", pin);
 
+	if (dev->dead)
+		return -ESHUTDOWN;
+
 	/* debug-only sanity checks */
 	if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
 		if (pin_config->mode != MCP2210_PIN_SPI) {

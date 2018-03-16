@@ -882,19 +882,15 @@ error_kref_put:
 	return ret;
 }
 
-
-#if 0
 static void fail_device(struct mcp2210_device *dev, int error)
 {
 	mcp2210_err("failing mcp2210 with error %d", error);
-	*((volatile int *)&dev->dead) = 1;
+	*((volatile int *)&dev->dead) = error;
 	unlink_urbs(dev);
 	cancel_delayed_work(&dev->delayed_work);
 
 	dev->cur_cmd->status = error;
 }
-#endif
-
 
 /**
  * claims new_config (so don't free it)
@@ -1149,6 +1145,7 @@ int process_commands(struct mcp2210_device *dev, const bool lock_held, const boo
 	unsigned long irqflags = irqflags;
 	struct mcp2210_cmd *cmd;
 	int ret = 0;
+	int submit_fail_count = 0;
 
 	mcp2210_info();
 
@@ -1297,14 +1294,15 @@ restart:
 			} else {
 				cmd->state = MCP2210_STATE_DEAD;
 				cmd->status = ret;
-				mcp2210_err("submit_urbs() failed: %d, here are "
-					"the dead URBs\n", ret);
+				mcp2210_err("submit_urbs() failed: %d", ret);
 				mcp2210_dump_urbs(dev, KERN_ERR, 3);
 
 				/* FIXME: do better than just dumping the command & removing it */
 
-				// fail_device(dev, ret);
-				// goto exit_unlock;
+				if (++submit_fail_count == 4) {
+					fail_device(dev, ret);
+					goto exit_unlock;
+				}
 				/* grab the next request */
 			}
 			goto restart;
@@ -1676,14 +1674,16 @@ int mcp2210_add_cmd(struct mcp2210_cmd *cmd, bool free_if_dead)
 		return -ENOMEM;
 
 	spin_lock_irqsave(&dev->queue_spinlock, irqflags);
-	if (dev->dead && free_if_dead) {
-		kfree(cmd);
+	if (dev->dead) {
+		if (free_if_dead)
+			kfree(cmd);
 		ret = -ESHUTDOWN;
-	} else
+	} else {
 		list_add_tail(&cmd->node, &dev->cmd_queue);
+		cmd->time_queued = jiffies;
+	}
 	spin_unlock_irqrestore(&dev->queue_spinlock, irqflags);
 
-	cmd->time_queued = jiffies;
 	return ret;
 }
 
@@ -1709,12 +1709,14 @@ static int check_response(struct mcp2210_device *dev)
 		return -EPROTO;
 	}
 
-//	if (unlikely(rep->head.req.status != MCP2210_STATUS_SUCCESS))
-//		return report_status_error(dev, rep->head.req.status);
-
-	if (unlikely(mcp_status != MCP2210_STATUS_SUCCESS)) {
-		mcp2210_err("mcp2210 command failed (status = 0x%02hhx)",
-			    mcp_status);
+	if (mcp_status == MCP2210_STATUS_BUSY) {
+		mcp2210_info("mcp2210 command failed: device busy "
+			     "(cmd = 0x%02hhx), retrying", req->cmd);
+		return -EBUSY;
+	} else if (unlikely(mcp_status != MCP2210_STATUS_SUCCESS)) {
+		mcp2210_err("mcp2210 command failed (cmd = 0x%02hhx, "
+			    "status = 0x%02hhx)",
+			    req->cmd, mcp_status);
 		return report_status_error(dev, mcp_status);
 	}
 
@@ -1779,6 +1781,7 @@ complete_urb_bad(struct mcp2210_device *dev, const int is_dir_in)
 		case -ENOENT:
 		case -ECONNRESET:
 		case -ESHUTDOWN:
+		case -EPIPE:	/* this seems to mean device unplugged? */
 			cmd->status = -ESHUTDOWN;
 			break;
 
