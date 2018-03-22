@@ -409,7 +409,8 @@ static int encode(int argc, char *argv[]) {
 		goto exit_free;
 	}
 
-	ret = creek_encode(board_config, &my_chip_settings, buf, sizeof(buf), 1);
+	ret = creek_encode(board_config, &my_chip_settings, buf, sizeof(buf),
+			   2);
 	if (ret < 0) {
 		errno = -ret;
 		perror("creek_encode");

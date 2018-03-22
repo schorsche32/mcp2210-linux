@@ -385,7 +385,8 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 	}
 
 	if (last_xfer->cs_change) {
-		mcp2210_err("Unsupported: cs_change set on last transfer in message.");
+		mcp2210_err("Unsupported: cs_change set on last transfer in "
+			    "message.");
 		return -EINVAL;
 	}
 
@@ -651,8 +652,9 @@ static int spi_submit_prepare(struct mcp2210_cmd *cmd_head)
 		 * we can't do 3-wire and have MOSI in high-z with this device,
 		 * so you'll have to use a gpio and external component to
 		 * enable that */
-		start = xfer->tx_buf ? xfer->tx_buf + cmd->pos + cmd->pending_bytes
-					  : NULL;
+		start = xfer->tx_buf
+			? xfer->tx_buf + cmd->pos + cmd->pending_bytes
+			: NULL;
 
 		cmd->pending_unacked = len;
 		cmd->pending_bytes  += len;

@@ -297,8 +297,10 @@ module_param(dump_spi,		int, 0664);
 module_param(pending_bytes_wait_threshold, uint, 0664);
 module_param(poll_delay_warn_secs, uint, 0664);
 
-MODULE_PARM_DESC(debug_level,	"0-7: Like /proc/sys/kernel/printk, but specific to this driver.");
-MODULE_PARM_DESC(creek_enabled,	"0-1: Enables Creek plug-n-pray (reads wiring and configuration from mcp2210 EEPROM).");
+MODULE_PARM_DESC(debug_level,	"0-7: Like /proc/sys/kernel/printk, but "
+				"specific to this driver.");
+MODULE_PARM_DESC(creek_enabled,	"0-1: Enables Creek plug-n-pray (reads wiring "
+				"and configuration from mcp2210 EEPROM).");
 MODULE_PARM_DESC(dump_urbs,	"0-1: Spew all URBS");
 MODULE_PARM_DESC(dump_cmds,	"0-1: Spew all (internal) commands");
 MODULE_PARM_DESC(dump_spi,	"0-1: Dump all SPI communications");
@@ -395,7 +397,8 @@ static int mcp2210_open(struct inode *inode, struct file *file)
 	if (IS_ENABLED(CONFIG_MCP2210_AUTOPM)) {
 		ret = usb_autopm_get_interface(intf);
 		if (ret && ret != -EACCES) {
-			mcp2210_err("usb_autopm_get_interface() failed:%d", ret);
+			mcp2210_err("usb_autopm_get_interface() failed:%d",
+				    ret);
 			return ret;
 		}
 	}
@@ -592,7 +595,8 @@ static int creek_configure(struct mcp2210_cmd *cmd, void *context) {
 
 	BUG_ON(dev->config);
 	if (IS_ERR(board_config)) {
-		mcp2210_err("Failed to decode board config from MCP2210's user-EEPROM: %d", (int)PTR_ERR(board_config));
+		mcp2210_err("Failed to decode board config from MCP2210's "
+			    "user-EEPROM: %d", (int)PTR_ERR(board_config));
 		return 0;
 	}
 
@@ -639,7 +643,8 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 					  GFP_ATOMIC);
 
 		if (ret && ret != -EINPROGRESS)
-			mcp2210_err("Adding eeprom command failed with %d, fuck it", ret);
+			mcp2210_err("Adding eeprom command failed with %d, "
+				    "giving up", ret);
 
 		return 0;
 	}
@@ -664,12 +669,16 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 
 		if (memcmp(magic, CREEK_CONFIG_MAGIC, 4)) {
 			mcp2210_notice("creek magic not detected: 0x%08x != "
-				       "0x%08x", *(u32*)magic, *(u32*)CREEK_CONFIG_MAGIC);
+				       "0x%08x", *(u32*)magic,
+				       *(u32*)CREEK_CONFIG_MAGIC);
 			return 0;
 		}
 
-		mcp2210_notice("creek magic detected, reading config from EEPROM");
-		ret = mcp2210_eeprom_read(dev, NULL, 0, 0x100, eeprom_read_complete, dev, GFP_ATOMIC);
+		mcp2210_notice("creek magic detected, reading config from "
+			       "EEPROM");
+		ret = mcp2210_eeprom_read(dev, NULL, 0, 0x100,
+					  eeprom_read_complete, dev,
+					  GFP_ATOMIC);
 
 		if (ret && ret != -EINPROGRESS)
 			mcp2210_err("Adding eeprom command failed with %d",
@@ -680,11 +689,13 @@ static int eeprom_read_complete(struct mcp2210_cmd *cmd_head, void *context)
 		struct mcp2210_cmd *cmd;
 
 		if (!dev->s.have_power_up_chip_settings) {
-			mcp2210_err("Don't have power up chip settings, aborting probe... :(");
+			mcp2210_err("Don't have power up chip settings, "
+				    "aborting probe... :(");
 			return 0;
 		}
 
-		cmd = mcp2210_alloc_cmd(dev, NULL, sizeof(struct mcp2210_cmd), GFP_ATOMIC);
+		cmd = mcp2210_alloc_cmd(dev, NULL, sizeof(struct mcp2210_cmd),
+					GFP_ATOMIC);
 		if (!cmd) {
 			mcp2210_err("mcp2210_alloc_cmd failed (ENOMEM)");
 			return 0;
@@ -851,7 +862,8 @@ int mcp2210_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		ret = mcp2210_eeprom_read(dev, NULL, 0, 4, eeprom_read_complete,
 					  dev, GFP_KERNEL);
 		if (ret && ret != -EINPROGRESS) {
-			mcp2210_err("Adding eeprom command failed with %d", ret);
+			mcp2210_err("Adding eeprom command failed with %d",
+				    ret);
 			goto error_deregister_dev;
 		}
 	}
@@ -895,7 +907,8 @@ static void fail_device(struct mcp2210_device *dev, int error)
 /**
  * claims new_config (so don't free it)
  */
-int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *new_config)
+int mcp2210_configure(struct mcp2210_device *dev,
+		      struct mcp2210_board_config *new_config)
 {
 	unsigned i;
 	struct mcp2210_chip_settings chip_settings;
@@ -919,7 +932,8 @@ int mcp2210_configure(struct mcp2210_device *dev, struct mcp2210_board_config *n
 	if (!dev->s.have_chip_settings)
 		mcp2210_err("ERROR: don't have dev->s.have_chip_settings!");
 
-	if (dev->config || dev->spi_master || dev->is_gpio_probed || !dev->s.have_chip_settings)
+	if (dev->config || dev->spi_master || dev->is_gpio_probed
+			|| !dev->s.have_chip_settings)
 		return -EPERM;
 
 	ret = validate_board_config(new_config, &dev->s.chip_settings);
@@ -1105,7 +1119,6 @@ static void push_delayed_cmd(struct mcp2210_device *dev)
 
 	spin_lock_irqsave(&dev->queue_spinlock, irqflags);
 	list_add_tail(&dev->cur_cmd->node, &dev->delayed_list);
-//	process_delayed_list(dev); // not needed, will be done in the process_commands loop
 	spin_unlock_irqrestore(&dev->queue_spinlock, irqflags);
 	dev->cur_cmd = NULL;
 }
@@ -1140,7 +1153,8 @@ static void schedule_delayed_cmd(struct mcp2210_device *dev, long *pdelay)
 }
 
 
-int process_commands(struct mcp2210_device *dev, const bool lock_held, const bool can_sleep)
+int process_commands(struct mcp2210_device *dev, const bool lock_held,
+		     const bool can_sleep)
 {
 	unsigned long irqflags = irqflags;
 	struct mcp2210_cmd *cmd;
@@ -1149,8 +1163,9 @@ int process_commands(struct mcp2210_device *dev, const bool lock_held, const boo
 
 	mcp2210_info();
 
-	/* you can't say that we can sleep if you call this func while holding
-	 * dev_spinlock, although you can call w/o lock_held, and can_sleep = false */
+	/* You can't say that we can sleep if you call this func while holding
+	 * dev_spinlock, although you can call w/o lock_held, and
+	 * can_sleep = false */
 	BUG_ON(lock_held && can_sleep);
 
 	if (!lock_held)
@@ -1207,7 +1222,8 @@ restart:
 		if (!list_empty(&dev->cmd_queue)) {
 			unsigned i;
 
-			dev->cur_cmd = list_entry(dev->cmd_queue.next, struct mcp2210_cmd, node);
+			dev->cur_cmd = list_entry(dev->cmd_queue.next,
+						  struct mcp2210_cmd, node);
 			list_del(dev->cmd_queue.next);
 			dev->cur_cmd->time_started = jiffies;
 
@@ -1296,8 +1312,6 @@ restart:
 				cmd->status = ret;
 				mcp2210_err("submit_urbs() failed: %d", ret);
 				mcp2210_dump_urbs(dev, KERN_ERR, 3);
-
-				/* FIXME: do better than just dumping the command & removing it */
 
 				if (++submit_fail_count == 4) {
 					fail_device(dev, ret);
@@ -1422,17 +1436,13 @@ static int unlink_urbs(struct mcp2210_device *dev)
 
 		mcp2210_debug("ep->is_dir_in = %d", ep->is_dir_in);
 
-		if(!atomic_dec_and_test(&ep->unlink_in_process)) {
-			mcp2210_crit("fuck");
+		if(!atomic_dec_and_test(&ep->unlink_in_process))
 			BUG();
-		}
 
 		usb_unlink_urb(ep->urb);
 
-		if(atomic_inc_and_test(&ep->unlink_in_process)) {
-			mcp2210_crit("fuck");
+		if(atomic_inc_and_test(&ep->unlink_in_process))
 			BUG();
-		}
 	}
 
 	return all_ubrs_done(dev);
@@ -1583,23 +1593,24 @@ static void delayed_work_callback(struct work_struct *work)
 			     jiffies_to_msecs(age));
 
 		if (ep->state == MCP2210_STATE_SUBMITTED) {
-			/* this is the state we'll normally see if dev->cur_cmd is not
-			 * null.  Make sure the command hasn't timed out and then
-			 * exit. */
+			/* this is the state we'll normally see if dev->cur_cmd
+			 * is not null.  Make sure the command hasn't timed out
+			 * and then exit. */
 			if (likely(age < TIMEOUT_URB)) {
 				goto exit_reschedule;
 			} else {
-#ifdef CONFIG_MCP2210_USB_QUIRKS
-#else
-#endif
-				/* timeout sending request, just fail the command */
-				mcp2210_err("URB timed out -- %s->retry_count = %u", urb_dir_str[ep->is_dir_in], ep->retry_count);
+				/* Timeout sending request, just fail the
+				 * command. */
+				mcp2210_err("URB timed out %s->retry_count=%u",
+					    urb_dir_str[ep->is_dir_in],
+					    ep->retry_count);
 				cmd->status = -EIO;
 				ret = unlink_urbs(dev);
 				goto exit_reschedule;
 			}
 		} else if (unlikely(age > TIMEOUT_HUNG)) {
-			mcp2210_err("Command timed-out (age = %ld, TIMEOUT_HUNG = %ld)", age, TIMEOUT_HUNG);
+			mcp2210_err("Command timed-out (age = %ld, "
+				    "TIMEOUT_HUNG = %ld)", age, TIMEOUT_HUNG);
 			fail_command(dev, -EIO, 0, false);
 			goto exit_reschedule;
 		}
@@ -1609,7 +1620,8 @@ exit_reschedule:
 	/* reschedule as long as the device isn't dead and the delayed_work
 	 * wasn't already re-armed by process_commands() */
 	if (!dev->dead && !timer_pending(&dev->delayed_work.timer))
-		schedule_delayed_work(&dev->delayed_work, msecs_to_jiffies(4000));
+		schedule_delayed_work(&dev->delayed_work,
+				      msecs_to_jiffies(4000));
 
 exit_unlock_dev:
 #ifdef CONFIG_MCP2210_DEBUG
@@ -1823,8 +1835,7 @@ static void complete_urb(struct urb *urb)
 	int lock_held;
 
 	if (!dev->cur_cmd) {
-		mcp2210_crit("I see the RPi usb host controller is fucking up "
-			     "again.  I suggest you reboot.");
+		mcp2210_crit("complete_urb called when no cur_cmd!?");
 		return;
 	}
 
@@ -1843,7 +1854,9 @@ static void complete_urb(struct urb *urb)
 	 * is that usb_unlink_urb can call the completion handlers */
 	lock_held = !atomic_read(&ep->unlink_in_process);
 
-	mcp2210_debug("%s, state: %#02x urb->status: %d, lock_held: %d, kill: %d", urb_dir_str[is_dir_in], ep->state, urb->status, lock_held, ep->kill);
+	mcp2210_debug("%s, state: %#02x urb->status: %d, lock_held: %d, "
+		      "kill: %d", urb_dir_str[is_dir_in], ep->state,
+		      urb->status, lock_held, ep->kill);
 
 	if (!lock_held)
 		spin_lock_irqsave(&dev->dev_spinlock, irqflags);
@@ -1898,7 +1911,8 @@ static void complete_urb(struct urb *urb)
 			if (cmd->mcp_status && type->mcp_error) {
 				ret = type->mcp_error(cmd);
 				if (ret == -EAGAIN) {
-					mcp2210_warn("ignoring mcp_status error and repeating");
+					mcp2210_warn("ignoring mcp_status "
+						     "error and repeating");
 					dev->eps[EP_OUT].retry_count = 0;
 					dev->eps[EP_IN].retry_count = 0;
 					cmd->status = -EINPROGRESS;
@@ -1913,8 +1927,9 @@ static void complete_urb(struct urb *urb)
 		cmd->state = MCP2210_STATE_COMPLETE;
 		if (type->complete_urb) {
 			ret = type->complete_urb(cmd);
-			if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE) && dump_cmds) {
-				mcp2210_debug("--------FINAL COMMAND STATE--------");
+			if (IS_ENABLED(CONFIG_MCP2210_DEBUG_VERBOSE)
+					&& dump_cmds) {
+				mcp2210_debug("-----FINAL COMMAND STATE-----");
 				dump_cmd(KERN_DEBUG, 0, "cmd: ", cmd);
 			}
 		} else {
@@ -1946,7 +1961,7 @@ bad:
 # define RETRY_COUNT 1
 #endif
 		if (dev->eps[EP_OUT].retry_count < RETRY_COUNT) {
-			mcp2210_warn("retrying................");
+			mcp2210_warn("retrying...");
 			++dev->eps[EP_OUT].retry_count;
 			++dev->eps[EP_IN].retry_count;
 restart:
@@ -1963,9 +1978,6 @@ restart:
 	default:
 		goto exit_unlock;
 	}
-
-//	if (cmd->complete)
-//		cmd->complete(cmd, cmd->context);
 
 process_commands:
 	process_commands(dev, true, false);
