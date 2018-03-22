@@ -629,7 +629,7 @@ struct mcp2210_board_config *creek_decode(
 	dec.ver = creek_get_bits(&bs, 4);
 	creek_debug("version", &bs);
 
-	if (dec.ver > 1) {
+	if (dec.ver > 2) {
 		printk(KERN_ERR "Creek version %hhu unsupported", dec.ver);
 		return ERR_PTR(-EPROTO);
 	}
@@ -725,10 +725,11 @@ struct mcp2210_board_config *creek_decode(
 	for (i = 0; i < dec.spi_count; ++i) {
 		u8 pin = dec.spi_pin_num[i];
 		struct mcp2210_pin_config_spi *spi = &tmp->pins[pin].spi;
+		uint speed_mag = dec.ver < 2 ? 2 : 3;
 
-		spi->max_speed_hz	   = unpack_uint_opt(&bs, 10, 2,
+		spi->max_speed_hz	   = unpack_uint_opt(&bs, 10, speed_mag,
 							     MCP2210_MAX_SPEED);
-		spi->min_speed_hz	   = unpack_uint_opt(&bs, 10, 2,
+		spi->min_speed_hz	   = unpack_uint_opt(&bs, 10, speed_mag,
 							     MCP2210_MIN_SPEED);
 		spi->mode		   = creek_get_bits(&bs, 8);
 		spi->bits_per_word	   = 8;
@@ -839,7 +840,7 @@ int creek_encode(const struct mcp2210_board_config *src,
 		return ret;
 	}
 
-	if (ver > 1) {
+	if (ver > 2) {
 		printk(KERN_ERR "Invalid encoding version: %u. Supported "
 				"versions are 0 and 1.\n", ver);
 		return ret;
@@ -954,9 +955,12 @@ int creek_encode(const struct mcp2210_board_config *src,
 	for (i = 0; i < data.spi_count; ++i) {
 		u8 pin = data.spi_pin_num[i];
 		const struct mcp2210_pin_config_spi *spi = &src->pins[pin].spi;
+		uint speed_mag = ver < 2 ? 2 : 3;
 
-		pack_uint_opt(&bs, spi->max_speed_hz, 10, 2, MCP2210_MAX_SPEED);
-		pack_uint_opt(&bs, spi->min_speed_hz, 10, 2, MCP2210_MIN_SPEED);
+		pack_uint_opt(&bs, spi->max_speed_hz, 10, speed_mag,
+			      MCP2210_MAX_SPEED);
+		pack_uint_opt(&bs, spi->min_speed_hz, 10, speed_mag,
+			      MCP2210_MIN_SPEED);
 		creek_put_bits(&bs, spi->mode, 8);
 		/* spi->bits_per_word should always be 8 since this chip
 		 * doesn't support any other value */

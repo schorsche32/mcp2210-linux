@@ -95,8 +95,8 @@
  * SPI Data
  * Field                 Type      Presence  Default Value     Precision  Mag.
  * ---------------------------------------------------------------------------
- * max_speed_hz          uint_opt  always    MCP2210_MAX_SPEED 10         2
- * min_speed_hz          uint_opt  always    MCP2210_MIN_SPEED 10         2
+ * max_speed_hz (1)      uint_opt  always    MCP2210_MAX_SPEED 10         3
+ * min_speed_hz (1)      uint_opt  always    MCP2210_MIN_SPEED 10         3
  * mode                  8 bits    always
  * use_cs_gpio           1 bit     always
  * cs_gpio               3 bits,   only if use_cs_gpio
@@ -108,6 +108,9 @@
  * Strings are encoded as 7 bit ASCII with bit 7 terminating the string.  (We
  * could get better compression by writing string sizes first and then limiting
  * them to 6 bits, but we seem to have plenty of room so far.)
+ *
+ * Footnotes:
+ * 1. Magnitide is 2 prior to v
  *
  */
 
