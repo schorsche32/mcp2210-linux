@@ -1096,7 +1096,7 @@ static void show_usage() {
 "         config\n"
 "  msg             Send a raw message to the MCP2210 device.\n"
 "  spi \"<msg_string>\"\n"
-"             Send an SPI message to the spidev device (use -d to specify\n"
+"             Send an SPI message to the spidev device (use -D to specify\n"
 "             device). A valid msg_string will consist of whitespace,\n"
 "             hexadecimal digit pairs and comma. A comma will delimit\n"
 "             individual transfers within the message. See Examples below.\n"
