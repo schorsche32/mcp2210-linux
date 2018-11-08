@@ -411,13 +411,7 @@ static int queue_msg(struct mcp2210_device *dev, struct spi_message *msg,
 		if (xfer->cs_change && xfer != last_xfer)
 			xfer_chain_size = 0;
 
-		/* debug-only sanity checks */
-		if (IS_ENABLED(CONFIG_MCP2210_DEBUG)) {
-			if (!(xfer->tx_buf || xfer->rx_buf)) {
-				mcp2210_err("spi_transfer w/o tx or rx buffer");
-				return -EINVAL;
-			}
-		}
+		BUG_ON(!xfer->tx_buf);
 
 		if (xfer->bits_per_word && xfer->bits_per_word != 8) {
 			mcp2210_warn("unsupported: spi_transfer.bits_per_word "
@@ -783,12 +777,15 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 
 		if (IS_ENABLED(CONFIG_MCP2210_DEBUG) && dump_spi) {
 			char msg_prefix[32];
-			BUG_ON(!xfer->rx_buf);
 			snprintf(msg_prefix, sizeof(msg_prefix), "%s <--: ",
 				 dev_name(&cmd->spi->dev));
-			print_hex_dump(KERN_INFO, msg_prefix,
-				       DUMP_PREFIX_OFFSET, 16, 1, xfer->rx_buf,
-				       xfer->len, true);
+			if (xfer->rx_buf)
+				print_hex_dump(KERN_INFO, msg_prefix,
+					       DUMP_PREFIX_OFFSET, 16, 1,
+					       xfer->rx_buf, xfer->len, true);
+			else
+				printk(KERN_INFO "%s(rx_buf is NULL)",
+				       msg_prefix);
 		}
 
 		/* if cs_change, then clearing cmd->spi_in_flight will trigger
@@ -807,7 +804,7 @@ static int spi_complete_urb(struct mcp2210_cmd *cmd_head)
 
 		mcp2210_info("Starting next spi_transfer...");
 		xfer = list_entry(next, struct spi_transfer,
-				       transfer_list);
+				  transfer_list);
 		cmd->pos = 0;
 		cmd->pending_bytes = 0;
 		cmd->busy_count = 0;
