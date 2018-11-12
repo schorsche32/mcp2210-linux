@@ -1920,8 +1920,8 @@ void dump_spi_transfer(const char *level, unsigned indent, const char *start,
 	       "%s  .tx_buf        = %p\n"
 	       "%s  .rx_buf        = %p\n"
 	       "%s  .len           = %u\n"
-	       "%s  .tx_dma        = %p\n"
-	       "%s  .rx_dma        = %p\n"
+	       "%s  .tx_dma        = %pad\n"
+	       "%s  .rx_dma        = %pad\n"
 	       "%s  .cs_change     = %u\n"
 	       "%s  .bits_per_word = %hhu\n"
 	       "%s  .delay_usecs   = %hu\n"
@@ -1932,8 +1932,8 @@ void dump_spi_transfer(const char *level, unsigned indent, const char *start,
 	       ind, xfer->tx_buf,
 	       ind, xfer->rx_buf,
 	       ind, xfer->len,
-	       ind, (void*)xfer->tx_dma,
-	       ind, (void*)xfer->tx_dma,
+	       ind, &xfer->tx_dma,
+	       ind, &xfer->tx_dma,
 	       ind, xfer->cs_change,
 	       ind, xfer->bits_per_word,
 	       ind, xfer->delay_usecs,
