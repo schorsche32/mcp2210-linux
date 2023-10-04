@@ -87,17 +87,17 @@ Append `usbhid.quirks=0x04d8:0x00de:0x0004` to your kernel command line boot opt
 For example, on Raspberry Pi, you'd add this to the /boot/cmdline.txt file.
 2. If the `usb-hid` driver is a kernel module:
 
-Create a new `.conf` file in `/etc/modprobe.d/` (e.g., `hid-quirks.conf`). Add the following line:
-   
-   ```plaintext
-   options usbhid quirks=0x04d8:0x00de:0x0004
-   ```
-You can either reboot or, if appropriate, unload and reload the `usbhid` module:
+	Create a new `.conf` file in `/etc/modprobe.d/` (e.g., `hid-quirks.conf`). Add the following line:
+	
+	```plaintext
+	options usbhid quirks=0x04d8:0x00de:0x0004
+	```
+	You can either reboot or, if appropriate, unload and reload the `usbhid` module:
 
-```bash
-sudo modprobe -r usbhid
-sudo modprobe usbhid
-```
+	```bash
+	sudo modprobe -r usbhid
+	sudo modprobe usbhid
+	```
 
 Configuration & Setup
 =====================
