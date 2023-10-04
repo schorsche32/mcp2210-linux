@@ -1936,7 +1936,12 @@ void dump_spi_transfer(const char *level, unsigned indent, const char *start,
 	       ind, &xfer->tx_dma,
 	       ind, xfer->cs_change,
 	       ind, xfer->bits_per_word,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0)
 	       ind, xfer->delay_usecs,
+#else
+	       ind, xfer->delay.value,
+#endif
+	       ind, xfer->delay.value,
 	       ind, xfer->speed_hz,
 	       ind, xfer->transfer_list.next, xfer->transfer_list.prev,
 	       ind);
