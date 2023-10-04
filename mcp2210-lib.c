@@ -1941,7 +1941,6 @@ void dump_spi_transfer(const char *level, unsigned indent, const char *start,
 #else
 	       ind, xfer->delay.value,
 #endif
-	       ind, xfer->delay.value,
 	       ind, xfer->speed_hz,
 	       ind, xfer->transfer_list.next, xfer->transfer_list.prev,
 	       ind);
