@@ -246,8 +246,7 @@ int mcp2210_eeprom_read(struct mcp2210_device *dev, u8 *dest, u8 addr,
 		switch (status) {
 		case MCP2210_EEPROM_UNREAD:
 			set_eeprom_byte_status(dev, i, MCP2210_EEPROM_READ_PENDING);
-
-			/* intentional fall-through */
+			/* FALLTHRU */
 		case MCP2210_EEPROM_READ_PENDING:
 			ready = 0;
 			break;

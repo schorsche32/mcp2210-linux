@@ -179,8 +179,9 @@ static int mcp2210_ioctl_complete(struct mcp2210_cmd *cmd_head, void *context)
 		if (!cmd_status)
 			memcpy(&idc->rep, dev->eps[EP_IN].buffer, 64);
 	}
-
+	
 #ifdef CONFIG_MCP2210_EEPROM
+	/* FALLTHRU */
 	case MCP2210_IOCTL_EEPROM: {
 		struct mcp2210_cmd_eeprom *cmd = (void *)cmd_head;
 
