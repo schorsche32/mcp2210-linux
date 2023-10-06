@@ -203,7 +203,8 @@ static void mcp2210_spi_probe_async(struct work_struct *work) {
 			chip->cs_gpio = dev->gpio.base + cfg->spi.cs_gpio;
 		else
 # endif
-			chip->cs_gpio = -EINVAL;
+			//chip->cs_gpio = -EINVAL;
+			//chip->cs_gpio = NULL;
 #endif /* HAVE_SPI_CS_GPIO */
 
 #ifdef CONFIG_MCP2210_IRQ

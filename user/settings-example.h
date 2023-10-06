@@ -58,15 +58,15 @@ enum {
 
 static const struct mcp2210_chip_settings my_power_up_chip_settings = {
 	.pin_mode = {
+		MCP2210_PIN_DEDICATED,
 		MCP2210_PIN_SPI,
-		MCP2210_PIN_GPIO,
 		MCP2210_PIN_DEDICATED,  /* Dedicated = USB Suspend */
 		MCP2210_PIN_DEDICATED,  /* Dedicated = SPI Transfer LED */
 		MCP2210_PIN_DEDICATED,  /* Dedicated = USB Low Power */
 		MCP2210_PIN_DEDICATED,  /* Dedicated = USB Configured */
 		MCP2210_PIN_DEDICATED,  /* Dedicated = External Interrupt */
-		MCP2210_PIN_SPI,        /* Dedicated = SPI Bus Release ACK */
-		MCP2210_PIN_GPIO,       /* Dedicated = SPI Bus Release REQ */
+		MCP2210_PIN_DEDICATED,        /* Dedicated = SPI Bus Release ACK */
+		MCP2210_PIN_DEDICATED,       /* Dedicated = SPI Bus Release REQ */
 	},
 	.gpio_value		= 0x0002,
 	.gpio_direction		= 0x0140,
@@ -86,12 +86,12 @@ static const struct mcp2210_chip_settings my_power_up_chip_settings = {
  */
 static const struct mcp2210_spi_xfer_settings my_power_up_spi_settings = {
 	.bitrate		= MCP2210_MAX_SPEED,
-	.idle_cs		= 0x01ff,
+	.idle_cs		= 0xffff,
 	.active_cs		= 0x0000,
 	.cs_to_data_delay	= 1,
 	.last_byte_to_cs_delay	= 1,
-	.delay_between_bytes	= 1,
-	.bytes_per_trans	= 4,
+	.delay_between_bytes	= 0,
+	.bytes_per_trans	= 2,
 	.mode			= SPI_MODE_3
 };
 
@@ -149,6 +149,9 @@ static const struct mcp2210_usb_key_params my_usb_key_params = {
 static const struct mcp2210_board_config my_board_config = {
 	.pins = {
 		{
+			.mode = MCP2210_PIN_DEDICATED,
+			.name = "SSPND"
+		}, {
 			.mode = MCP2210_PIN_SPI,
 			.spi.max_speed_hz = 20000,
 			.spi.min_speed_hz = 2000,
@@ -161,57 +164,31 @@ static const struct mcp2210_board_config my_board_config = {
 			.modalias = "spidev",
 			.name = "L6470",
 		}, {
-			.mode = MCP2210_PIN_GPIO,
-			.has_irq = 0,
-			.irq = 0,
-			.name = "unused%d",
+			.mode = MCP2210_PIN_DEDICATED,
+			.name = "SSPND"
+		}, {
+			.mode = MCP2210_PIN_DEDICATED,
+			.name = "SSPND",
+		}, {
+			.mode = MCP2210_PIN_DEDICATED,
+			.name = "SSPND",
+		}, {
+			.mode = MCP2210_PIN_DEDICATED,
+			.name = "SSPND",
 		}, {
 			.mode = MCP2210_PIN_DEDICATED,
 			.name = "SSPND"
 		}, {
 			.mode = MCP2210_PIN_DEDICATED,
-			.name = "USBLED",
+			.name = "SSPND"
 		}, {
 			.mode = MCP2210_PIN_DEDICATED,
-			.name = "LOWPWR",
-		}, {
-			.mode = MCP2210_PIN_DEDICATED,
-			.name = "USBCFG",
-		}, {
-			.mode = MCP2210_PIN_DEDICATED,
-			.has_irq = 1,
-			.irq = 0,
-			/* .irq_type would be ignored here because you use
-			 * struct my_power_up_chip_settings::other_settings
-			 * for dedicated GP6. */
-			.name = "MOTION",
-		}, {
-			.mode = MCP2210_PIN_SPI,
-			.has_irq = 1,
-			.irq = 0,
-			.spi.max_speed_hz = 20000,
-			.spi.min_speed_hz = 5000,
-			.spi.mode = SPI_MODE_3,
-			.spi.bits_per_word = 8,
-			.spi.use_cs_gpio = 0,
-			.spi.cs_gpio = 0,
-			.spi.cs_to_data_delay = 2,
-			.spi.last_byte_to_cs_delay = 2,
-			.spi.delay_between_bytes = 4,
-			.spi.delay_between_xfers = 10,
-			.modalias = "adns9x",
-			.name = "ADNS-9800",
-		}, {
-			.mode = MCP2210_PIN_GPIO,
-			.has_irq = 1,
-			.irq = 1,
-			.irq_type = IRQ_TYPE_EDGE_RISING,
-			.name = "gpio_int%d",
+			.name = "SSPND"
 		}
 	},
-	.poll_gpio_usecs	      = 25000,	/* 40 Hz poll rate */
-	.stale_gpio_usecs	      = 2500,
-	.poll_intr_usecs	      = 25000,	/* 40 Hz poll rate */
+	.poll_gpio_usecs	      = 0,	/* 40 Hz poll rate */
+	.stale_gpio_usecs	      = 0,
+	.poll_intr_usecs	      = 0,	/* 40 Hz poll rate */
 	.stale_intr_usecs	      = 0,
 	._3wire_capable		      = 0,
 	._3wire_tx_enable_active_high = 0,
