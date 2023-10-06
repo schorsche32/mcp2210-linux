@@ -1924,7 +1924,13 @@ void dump_spi_transfer(const char *level, unsigned indent, const char *start,
 	       "%s  .rx_dma        = %pad\n"
 	       "%s  .cs_change     = %u\n"
 	       "%s  .bits_per_word = %hhu\n"
-	       "%s  .delay_usecs   = %hu\n"
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
+// Newer kernel version
+		   "%s  .delay.value   = %hu\n"
+#else
+// Older kernel version
+		   "%s  .delay_usecs   = %hu\n"
+#endif
 	       "%s  .speed_hz      = %u\n"
 	       "%s  .transfer_list = {.next = %p, .prev = %p}\n"
 	       "%s}\n",

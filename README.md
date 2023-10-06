@@ -81,6 +81,24 @@ static const struct hid_device_id hid_table[] = {
 
 This prevents the mcp2210 driver from being selected as a candidate, even if the vid/pid explicitly match.  Currently, the work-around is to run the script [`user/mcp2210_bind.sh`](user/mcp2210_bind.sh) as root (you must have sysfs mounted).  This uses sysfs files to tell the usbhid driver to unbind from the mcp2210 device so that the mcp2210 driver can probe it.  If you know of a way to do this via udev rules, please notify me! (just create an issue via the issue tracker).
 
+Alternative, make USB_HID ignore this device:
+1. If `usb-hid` is build as part of the kernel (most of the time)
+Append `usbhid.quirks=0x04d8:0x00de:0x0004` to your kernel command line boot options. This boot option directs the usbhid driver to ignore a device with a specific Vendor ID (0x04d8) and Product ID (0x00de). The 0x0004 value at the end signifies HID_QUIRK_IGNORE.
+For example, on Raspberry Pi, you'd add this to the /boot/cmdline.txt file.
+2. If the `usb-hid` driver is a kernel module:
+
+	Create a new `.conf` file in `/etc/modprobe.d/` (e.g., `hid-quirks.conf`). Add the following line:
+	
+	```plaintext
+	options usbhid quirks=0x04d8:0x00de:0x0004
+	```
+	You can either reboot or, if appropriate, unload and reload the `usbhid` module:
+
+	```bash
+	sudo modprobe -r usbhid
+	sudo modprobe usbhid
+	```
+
 Configuration & Setup
 =====================
 As you may be aware, SPI does not offer a mechanism to automatically detect and configure peripherals. Typically, a particular chip is hard-wired to an SPI master and the driver for that master knows whats conntect to it.  In Linux, SPI slave devices are configred via [`struct spi_board_info`](https://www.kernel.org/doc/htmldocs/device-drivers/API-struct-spi-board-info.html) objects.  But for USB-to-SPI protocol bridges like the MCP2210, we can't know how its board is wired -- we need that information to come from somewhere else.
